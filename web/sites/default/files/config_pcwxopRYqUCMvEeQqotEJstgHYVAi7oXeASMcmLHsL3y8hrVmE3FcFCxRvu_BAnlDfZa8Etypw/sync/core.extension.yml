@@ -51,4 +51,6 @@ module:
 theme:
   olivero: 0
   claro: 0
+  power_portfolio: 0
+  portfolio_theme_explore: 0
 profile: standard

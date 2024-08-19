@@ -1,0 +1,22 @@
+uuid: cbc6da36-3ffa-4ea9-9adf-626f2f01fcfd
+langcode: en
+status: true
+dependencies:
+  module:
+    - system
+  theme:
+    - portfolio_theme_explore
+_core:
+  default_config_hash: 3Anbai90SLNs3lo-lyEghQeAGJrcmA9MmftLfEODQZw
+id: portfolio_theme_explore_content
+theme: portfolio_theme_explore
+region: content
+weight: -2
+provider: null
+plugin: system_main_block
+settings:
+  id: system_main_block
+  label: 'Main page content'
+  label_display: '0'
+  provider: system
+visibility: {  }

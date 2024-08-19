@@ -22,6 +22,8 @@
         "drupal/core-recommended": "^10.2",
         "drupal/paragraphs": "^1.18",
         "drupal/pathauto": "^1.13",
+        "drupal/portfolio_theme_explore": "^1.0",
+        "drupal/power_portfolio": "^9.0",
         "drush/drush": "^12.5"
     },
     "conflict": {

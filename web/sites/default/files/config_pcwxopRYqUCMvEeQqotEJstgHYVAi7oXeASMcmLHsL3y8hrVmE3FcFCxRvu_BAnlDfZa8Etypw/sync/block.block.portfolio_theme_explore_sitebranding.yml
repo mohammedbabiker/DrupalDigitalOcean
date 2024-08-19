@@ -1,0 +1,25 @@
+uuid: ff468f30-38e1-4817-aa73-8e6d90257fab
+langcode: en
+status: true
+dependencies:
+  module:
+    - system
+  theme:
+    - portfolio_theme_explore
+_core:
+  default_config_hash: WkgXSt85aLbBDrMTAFgSL7S-WhpvHzn1M0IxvonTVow
+id: portfolio_theme_explore_sitebranding
+theme: portfolio_theme_explore
+region: header
+weight: 0
+provider: null
+plugin: system_branding_block
+settings:
+  id: system_branding_block
+  label: 'Site branding'
+  label_display: '0'
+  provider: system
+  use_site_logo: true
+  use_site_name: false
+  use_site_slogan: false
+visibility: {  }
