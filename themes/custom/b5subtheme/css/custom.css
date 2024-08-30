@@ -1,0 +1,131 @@
+h1.page-header {
+	text-align: start;
+	padding: 7rem 1rem;
+	color: #fff;
+}
+
+body.path-frontpage section.page-banner {
+	display: none;
+}
+
+
+main .view-frontpage .view-empty, .feed-icons {
+    display: none;
+}
+
+
+.advance-blog-block .view-content .views-row {
+	display: flex;
+	flex-wrap: wrap; /* fix */
+	flex-direction: row;
+	gap: 1rem;
+}
+
+.advance-blog-block {
+	margin-top: 3rem;
+	/*font-size: 5rem;*/
+}
+
+@media (min-width: 992px) {
+    .advance-blog-block {
+        margin: 4rem 17rem; /* Padding for desktops */
+    }
+}
+
+
+
+.advance-blog-block .views-field-title {
+	font-size: 1rem;
+	font-weight: 900;
+	text-decoration: none; 
+	color: red; 
+}
+@media (min-width: 992px) {
+
+.advance-blog-block .views-field-title {
+	font-size: 2rem;
+	font-weight: 700;
+	text-decoration: none; 
+	color: red; 
+}
+}
+
+.advance-blog-block .view-content .views-row {
+	border-bottom: 1px solid #494551;
+	margin-bottom: 2rem;
+	padding-bottom: 1rem;
+}
+
+nav.navbar.navbar-expand-lg.navbar-dark {
+	border-bottom: 1px solid #494551;
+}
+
+
+footer.mt-auto.footer-dark {
+	border-top: 1px solid #494551;
+	/*background-color: #1A1A28 !important;*/
+}
+
+ul.nav.navbar-nav {
+	flex-direction: row;
+}
+
+footer li.nav-item {
+	margin-left: -0.5rem;
+}
+
+footer li.nav-item:hover {
+    text-decoration: underline;
+    transform: translateZ(10px)
+    
+}
+/* --------------------------*/
+
+div#block-b5subtheme-socials {
+	display: flex;
+}
+
+
+#block-b5subtheme-socials .clearfix.text-formatted.field.field--name-body.field--type-text-with-summary.field--label-hidden.field__item {
+	display: flex;
+	gap: 1rem;
+	margin-bottom: 1rem;
+}
+
+.views-field-field-blog-tag span.field-content a {
+	color: #a4c8ec;
+	text-decoration: none;
+}
+
+.views-field-title .field-content a,
+article span.field.field--name-title{
+	color: #a4c8ec;
+	text-decoration: none;
+}
+
+article.node.node--type-blog {
+	margin: 1rem;
+}
+
+@media (min-width: 992px) {
+	article.node.node--type-blog {
+		margin: 4rem 17rem;
+	}
+}
+
+.field--name-field-blog-tag .field__items, .field--name-field-blog-tag a {
+	display: flex;
+	gap: 0.4rem;
+	text-decoration: none;
+	color: #a4c8ec;
+}
+
+.field.field--name-field-blog-tag.field--type-entity-reference.field--label-above,
+.field.field--name-field-blog-date.field--type-datetime.field--label-above {
+	display: flex;
+	gap: 1rem;
+}
+
+.path-taxonomy section.page-banner {
+	display: none;
+}
