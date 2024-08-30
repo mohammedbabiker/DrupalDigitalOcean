@@ -81,15 +81,11 @@ sites/simpletest
 /themes/README.txt
 /themes/contrib
 /.csslintrc
-/.editorconfig
 /.eslintignore
 /.eslintrc.json
-/.gitattributes
 /.htaccess
 /.ht.router.php
 /autoload.php
-/composer.json
-/composer.lock
 /example.gitignore
 /index.php
 /INSTALL.txt
