@@ -22,6 +22,5 @@ jobs:
           debug: true
           script: |
             cd ${{ secrets.DOCROOT }}
-
             git pull
             robo job:drupal-update
