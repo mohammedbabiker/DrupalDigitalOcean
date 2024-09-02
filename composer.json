@@ -26,6 +26,9 @@
         "drupal/pathauto": "^1.13",
         "drush/drush": "^13.0"
     },
+    "require-dev": {
+        "consolidation/robo": "^4.0.3"
+    },
     "conflict": {
         "drupal/drupal": "*"
     },
