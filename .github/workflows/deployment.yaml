@@ -9,6 +9,10 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
+      - name: Export PATH env
+        run: export PATH=${{ secrets.PATH }}
+      - name: Test
+        run: echo $GITHUB_SHA_SHORT
       - name: Deploy to droplet using SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -18,5 +22,6 @@ jobs:
           debug: true
           script: |
             cd ${{ secrets.DOCROOT }}
+
             git pull
             robo job:drupal-update
