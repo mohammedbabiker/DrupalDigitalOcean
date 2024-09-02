@@ -10,9 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Export PATH env
-        run: export PATH=${{ secrets.PATH }}
-      - name: Test
-        run: echo $GITHUB_SHA_SHORT
+        run: export $PATH
       - name: Deploy to droplet using SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
