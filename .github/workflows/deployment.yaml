@@ -9,8 +9,6 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Export PATH env
-        run: echo 'export PATH="$PATH:$DOCROOT/vendor/bin"' >> $GITHUB_ENV
       - name: Deploy to droplet using SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -20,5 +18,6 @@ jobs:
           debug: true
           script: |
             cd ${{ secrets.DOCROOT }}
+            export PATH="$PATH:${{ secrets.DOCROOT }}/vendor/bin"
             git pull
             robo job:drupal-update
