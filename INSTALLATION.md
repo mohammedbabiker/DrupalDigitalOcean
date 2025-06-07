@@ -1,23 +1,22 @@
 # Install the site with composer
 
-``` bash
+```bash
 git clone git@github.com:mohammedbabiker/DrupalDigitalOcean.git drupal && cd drupal
 ```
 
-``` bash
+```bash
 composer install
 ```
 
-### Change ` setting.php ` in order to import config files
-> on setting.php serch for config_sync
+### Change `setting.php` in order to import config files
+
+> on setting.php search for config_sync
 > and uncomment the line and change sync path to `config/sync`
 
 ### Import Database
 
-
-
 ### Import Config file
 
-``` bash
+```bash
 drush cim
 ```
