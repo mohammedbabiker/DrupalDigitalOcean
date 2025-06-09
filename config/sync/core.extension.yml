@@ -51,4 +51,9 @@ theme:
   stable9: 0
   bootstrap5: 0
   b5subtheme: 0
+  material_base: 0
+  material_base_mdc: 0
+  stable: 0
+  classy: 0
+  showcase_lite: 0
 profile: standard
