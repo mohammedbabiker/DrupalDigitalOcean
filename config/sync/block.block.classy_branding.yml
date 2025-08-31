@@ -1,0 +1,25 @@
+uuid: aa5bc463-aa21-4f25-b384-b75fe224a374
+langcode: en
+status: true
+dependencies:
+  module:
+    - system
+  theme:
+    - classy
+_core:
+  default_config_hash: wB89mkJZBCla3TyOiNE7Fao4H7W6R8nSH4vqMIpa7fk
+id: classy_branding
+theme: classy
+region: sidebar_first
+weight: -6
+provider: null
+plugin: system_branding_block
+settings:
+  id: system_branding_block
+  label: 'Site branding'
+  label_display: '0'
+  provider: system
+  use_site_logo: true
+  use_site_name: true
+  use_site_slogan: true
+visibility: {  }

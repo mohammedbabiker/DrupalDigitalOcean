@@ -39,12 +39,10 @@ module:
   system: 0
   taxonomy: 0
   text: 0
-  token: 0
   toolbar: 0
   update: 0
   user: 0
   views_ui: 0
-  pathauto: 1
   views: 10
   standard: 1000
 theme:
@@ -53,4 +51,9 @@ theme:
   stable9: 0
   bootstrap5: 0
   b5subtheme: 0
+  material_base: 0
+  material_base_mdc: 0
+  stable: 0
+  classy: 0
+  showcase_lite: 0
 profile: standard

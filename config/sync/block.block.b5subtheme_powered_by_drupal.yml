@@ -1,4 +1,4 @@
-uuid: bf4e3f17-721d-40ba-809c-65d4ddb46373
+uuid: 5b0e5ac0-7620-4309-bd9e-9c92043a04ce
 langcode: en
 status: false
 dependencies:
@@ -11,7 +11,7 @@ _core:
 id: b5subtheme_powered_by_drupal
 theme: b5subtheme
 region: footer
-weight: -4
+weight: 0
 provider: null
 plugin: system_powered_by_block
 settings:

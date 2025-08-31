@@ -1,6 +1,6 @@
-uuid: 92edf4cf-ac04-4cc5-be38-24a4d88b8ae6
+uuid: e6bbd144-fbb2-4638-928b-a3095f63a5f8
 langcode: en
-status: false
+status: true
 dependencies:
   theme:
     - b5subtheme

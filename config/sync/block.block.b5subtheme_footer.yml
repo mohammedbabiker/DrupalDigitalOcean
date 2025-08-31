@@ -1,6 +1,6 @@
-uuid: 7cab3a5c-3c66-419d-b79d-f175f62f3df0
+uuid: e3fb4145-a0aa-4112-a98b-a3db3ae44496
 langcode: en
-status: false
+status: true
 dependencies:
   config:
     - system.menu.footer
@@ -13,7 +13,7 @@ _core:
 id: b5subtheme_footer
 theme: b5subtheme
 region: footer
-weight: -5
+weight: -6
 provider: null
 plugin: 'system_menu_block:footer'
 settings:

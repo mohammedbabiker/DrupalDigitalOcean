@@ -19,12 +19,18 @@
         "consolidation/robo": "^4.0",
         "drupal/admin_toolbar": "^3.5",
         "drupal/bootstrap5": "^4.0",
+        "drupal/catalog_lite": "^1.4",
+        "drupal/classy": "^2.0",
         "drupal/core-composer-scaffold": "^10.3",
         "drupal/core-project-message": "^10.3",
         "drupal/core-recommended": "^10.3",
         "drupal/core-vendor-hardening": "^10.3",
+        "drupal/material_base": "^3.0",
         "drupal/paragraphs": "^1.18",
         "drupal/pathauto": "^1.13",
+        "drupal/ruhi": "^11.0",
+        "drupal/showcase_lite": "^1.5",
+        "drupal/token": "^1.15",
         "drush/drush": "^13.0"
     },
     "conflict": {
