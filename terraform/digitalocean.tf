@@ -1,10 +1,23 @@
 resource "digitalocean_droplet" "web" {
-  image    = var.do_image
-  name     = var.do_name
-  region   = var.do_region
-  size     = var.do_size
-  ssh_keys = var.do_ssh_keys
+  image      = var.do_image
+  name       = var.do_name
+  region     = var.do_region
+  size       = var.do_size
+  ssh_keys   = var.do_ssh_keys
   monitoring = var.do_monitoring
+}
+
+resource "digitalocean_volume" "storage" {
+  region                  = var.do_region
+  name                    = var.do_name
+  size                    = 40
+  initial_filesystem_type = "ext4"
+  description             = "backup storage"
+}
+
+resource "digitalocean_volume_attachment" "storage" {
+  droplet_id = digitalocean_droplet.web.id
+  volume_id  = digitalocean_volume.storage.id
 }
 
 resource "digitalocean_firewall" "web" {
