@@ -1,0 +1,14 @@
+- name: Setup hostname
+  ansible.builtin.hostname:
+    name: vpn.your-domain.com
+    use: systemd
+
+- name: localhost
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    line: 127.0.0.1 localhost.localdomain localhost
+
+- name: your-doman.com
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    line: your-droplet-ip vps.your-domain.com vps # vps as a short hostname

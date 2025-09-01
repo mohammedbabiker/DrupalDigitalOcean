@@ -1,0 +1,21 @@
+# Ansible secrets
+group_vars/all.yml
+host_vars/*
+inventory/host.yaml
+hostname/tasks/main.yaml
+
+# Retry files
+*.retry
+
+# Logs
+*.log
+
+# SSH keys
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+
+
+note.txt
+
