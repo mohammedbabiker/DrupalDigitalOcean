@@ -20,6 +20,11 @@ resource "digitalocean_volume_attachment" "storage" {
   volume_id  = digitalocean_volume.storage.id
 }
 
+resource "digitalocean_reserved_ip" "web" {
+  droplet_id = digitalocean_droplet.web.id
+  region     = digitalocean_droplet.web.region
+}
+
 resource "digitalocean_firewall" "web" {
   name = var.do_firewall_name
 
