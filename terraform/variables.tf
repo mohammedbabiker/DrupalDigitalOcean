@@ -9,7 +9,7 @@ variable "do_token" {
 }
 
 variable "do_image" {
-  description = "Image"
+  description = "Droplet OS image"
   type        = string
   validation {
     condition     = length(var.do_image) > 6
@@ -36,7 +36,7 @@ variable "do_region" {
 }
 
 variable "do_size" {
-  description = "size"
+  description = "Droplet size"
   type        = string
   default     = "s-1vcpu-512mb-10gb"
 
@@ -49,7 +49,7 @@ variable "do_ssh_keys" {
 }
 
 variable "do_monitoring" {
-  description = "value"
+  description = "Droplet monnitoring"
   type        = bool
 
 }
@@ -61,7 +61,7 @@ variable "do_ssh_private_key_path" {
 }
 
 variable "do_firewall_name" {
-  description = "value"
+  description = "Droplet firewall for network acsess"
   type        = string
   default     = "only-22-and-443"
 
