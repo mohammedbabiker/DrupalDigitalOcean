@@ -1,0 +1,12 @@
+- name: Add PHP PPA repository
+  ansible.builtin.apt_repository:
+    repo: ppa:ondrej/php
+    state: present
+
+- name: Force update apt cache
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: 0
+
+- include_tasks: php-installation.yaml
+- include_tasks: php-config.yaml

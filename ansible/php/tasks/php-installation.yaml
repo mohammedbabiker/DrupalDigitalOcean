@@ -1,0 +1,31 @@
+- name: Install PHP 8.3 and required packages
+  ansible.builtin.apt:
+    pkg:
+      - php8.3
+      - php8.3-fpm
+      - php8.3-gd
+      - php8.3-common
+      - php8.3-mysql
+      - php8.3-apcu
+      - php8.3-gmp
+      - php8.3-curl
+      - php8.3-intl
+      - php8.3-mbstring
+      - php8.3-xmlrpc
+      - php8.3-xml
+      - php8.3-cli
+      - php8.3-zip
+    install_recommends: no
+    state: present
+    update_cache: yes
+  
+- name: Clean apt cache
+  ansible.builtin.apt:
+    autoclean: yes
+    autoremove: yes
+  
+- name: Ensure apache2 is stop and disable
+  ansible.builtin.service:
+    name: apache2
+    state: stopped
+    enabled: no
