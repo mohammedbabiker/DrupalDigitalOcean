@@ -1,0 +1,51 @@
+- name: Apply security updates only
+  ansible.builtin.apt:
+    upgrade: dist
+    update_cache: yes
+    cache_valid_time: 3600
+    only_upgrade: yes
+
+- name: Install packages
+  ansible.builtin.apt:
+    pkg:
+      - git
+      - curl
+      - gnupg
+      - python3-pip
+      - python3-setuptools
+      - ca-certificates
+      - iptables
+      - iptables-persistent
+      - apt-transport-https
+    state: present
+
+- name: Remove dependencies that are no longer required
+  ansible.builtin.apt:
+    autoremove: yes
+
+- name: Remove useless packages from the cache
+  ansible.builtin.apt:
+    autoclean: yes
+
+- name: Create symlink for vim
+  ansible.builtin.file:
+    src: /usr/bin/vim
+    dest: /usr/bin/v
+    state: link
+
+- name: Create scripts dir
+  ansible.builtin.file:
+    path: /root/scripts
+    state: directory
+    owner: root
+    group: root
+    mode: '755'
+
+- name: Upload one script
+  ansible.builtin.copy:
+    src: files/script.sh
+    dest: /root/scripts/script.sh
+    owner: root
+    group: root
+    mode: '700'
+

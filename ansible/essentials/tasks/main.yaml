@@ -1,0 +1,11 @@
+- name: Change sudoers file
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers
+    state: present
+    regexp: "^%sudo"
+    line: "%sudo ALL=(ALL) NOPASSWD: ALL"
+    validate: /usr/sbin/visudo -cf %s
+
+- include_tasks: packages.yaml
+- include_tasks: br0.yaml
+- include_tasks: loopback.yaml
