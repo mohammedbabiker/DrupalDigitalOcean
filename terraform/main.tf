@@ -4,10 +4,18 @@ terraform {
       source  = "digitalocean/digitalocean"
       version = "~> 2.0"
     }
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 5"
+    }
   }
 }
 
 # Configure the DigitalOcean Provider
 provider "digitalocean" {
   token = var.do_token
+}
+
+provider "cloudflare" {
+  api_token = var.CLOUDFLARE_API_TOKEN
 }

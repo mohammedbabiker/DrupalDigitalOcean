@@ -73,3 +73,45 @@ variable "do_allow_ssh_only_from" {
   default     = ["0.0.0.0/0", "::/0"]
 
 }
+
+variable "CLOUDFLARE_API_TOKEN" {
+  description = "Cloudflare API token"
+  type        = string
+  sensitive   = true
+}
+
+variable "cf_zone_id" {
+  description = "default zone id"
+  type        = string
+  sensitive   = true
+}
+
+variable "cf_record_name" {
+  description = "record dns name"
+  type        = list(string)
+
+}
+
+variable "cf_type" {
+  description = "value of the private dns record type, only allowed options are 'A', 'AAAA', 'CNAME', 'MX', 'PTR', 'SRV', 'TXT'"
+  type        = string
+  default     = "A"
+
+  validation {
+    condition     = can(regex("^(A|AAAA|CNAME|MX|PTR|SRV|TXT)$", var.cf_type))
+    error_message = "Invalid value for private dns record type, only allowed options are: 'A', 'AAAA', 'CNAME', 'MX', 'PTR', 'SRV', 'TXT'"
+  }
+}
+
+variable "cf_ttl" {
+  description = "Time To Live number"
+  type        = number
+  default     = 3600
+
+}
+
+variable "cf_proxied" {
+  description = "proxied o' not"
+  type        = bool
+
+}
