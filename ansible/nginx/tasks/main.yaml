@@ -1,0 +1,31 @@
+- name: Install nginx
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+
+- name: Ensure nginx is started and enabled
+  ansible.builtin.service:
+    name: nginx
+    state: started
+    enabled: yes
+
+- name: Remove default nginx page
+  ansible.builtin.file:
+    path: /var/www/html/index.nginx-debian.html
+    state: absent
+
+- name: Add custom page
+  ansible.builtin.copy:
+    dest: /var/www/html/index.html
+    content: |
+      <!DOCTYPE html>
+      <html>
+      <body>
+      <h1 style="text-align: center; margin-top: 5rem;">Nginx server is up and running.</h1>
+      </body>
+      </html>
+
+- name: Restart nginx service to apply
+  ansible.builtin.service:
+    name: nginx
+    state: restarted
