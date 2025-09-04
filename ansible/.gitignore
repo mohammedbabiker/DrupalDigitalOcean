@@ -1,5 +1,6 @@
 # Ansible secrets
 group_vars/all.yml
+group_vars/main.yaml
 host_vars/*
 inventory/host.yaml
 hostname/tasks/main.yaml
@@ -16,10 +17,8 @@ hostname/tasks/main.yaml
 id_rsa*
 id_ed25519*
 
+# Sensitive
 note.txt
-
+*.vault_password
 essentials/files/11-lo.network
 essentials/files/br0.network
-
-.vault_password
-group_vars/main.yaml
