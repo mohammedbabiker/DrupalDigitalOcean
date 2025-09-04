@@ -16,9 +16,10 @@ hostname/tasks/main.yaml
 id_rsa*
 id_ed25519*
 
-
 note.txt
 
 essentials/files/11-lo.network
 essentials/files/br0.network
 
+.vault_password
+group_vars/main.yaml

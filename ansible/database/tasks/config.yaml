@@ -1,0 +1,81 @@
+- name: Ensure MySQL Python dependencies are installed
+  ansible.builtin.apt:
+    name:
+      - python3-pymysql
+    state: present
+    update_cache: yes
+  become: true
+
+- name: Set root password for MySQL
+  community.mysql.mysql_user:
+    name: root
+    password: "{{ db_root_password }}"
+    login_password: " "
+    host_all: true
+    column_case_sensitive: true
+    check_implicit_admin: true
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    state: present
+
+- name: Remove anonymous users
+  community.mysql.mysql_user:
+    name: ''
+    host_all: true
+    state: absent
+    login_user: root
+    login_password: "{{ db_root_password }}"
+    column_case_sensitive: true
+
+- name: Disallow root login remotely
+  community.mysql.mysql_user:
+    name: root
+    host: "{{ item }}"
+    state: absent
+    login_user: root
+    column_case_sensitive: true
+    login_password: "{{ db_root_password }}"
+  loop:
+    - "%"
+    - "::1"
+    - "0.0.0.0"
+
+- name: Remove test database
+  community.mysql.mysql_db:
+    name: test
+    state: absent
+    login_user: root
+    login_password: "{{ db_root_password }}"
+  
+- name: Reload privilege tables
+  community.mysql.mysql_user:
+    login_user: root
+    login_password: "{{ db_root_password }}"
+    column_case_sensitive: true
+    name: root
+    host: localhost
+    priv: '*.*:ALL,GRANT'
+    state: present
+  
+- name: Create Drupal database
+  community.mysql.mysql_db:
+    name: "{{ drupal_db_name }}"
+    state: present
+    login_user: root
+    login_password: "{{ db_root_password }}"
+  
+- name: Create Drupal user and grant privileges
+  community.mysql.mysql_user:
+    name: "{{ drupal_db_user }}"
+    host: localhost
+    password: "{{ drupal_db_pass }}"
+    priv: "drupal_db_name.*:ALL"
+    state: present
+    login_user: root
+    login_password: "{{ db_root_password }}"
+    column_case_sensitive: true
+ 
+- name: Flush MySQL privileges
+  community.mysql.mysql_query:
+    login_user: root
+    login_password: "{{ db_root_password }}"
+    query: "FLUSH PRIVILEGES;"
