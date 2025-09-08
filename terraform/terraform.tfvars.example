@@ -1,0 +1,16 @@
+# Digitalocean
+do_image                = "images[].slug" # Get it with curl from digitalocean api docs
+do_name                 = "droplet-name"
+do_region               = "nyc1"
+do_size                 = "sizes[].slug"
+do_ssh_keys             = ["your-ssh-key-fingerprint"]
+do_monitoring           = true
+do_ssh_private_key_path = "~/.ssh/id_rsa"
+# do_allow_ssh_only_from = ["0.0.0.0/0"] # your ip address
+
+# CloudFlare
+cf_zone_id     = "your-zone-id" # Get it from cloudfalre domain details page
+cf_record_name = ["@", "www"]
+cf_type        = "A"
+cf_proxied     = true
+cf_ttl         = 3600
