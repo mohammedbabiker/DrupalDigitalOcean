@@ -1,0 +1,11 @@
+---
+# Path to Terraform directory containing terraform.tfstate
+tf_state_dir: "{{ playbook_dir }}/../terraform"
+
+# Read terraform.tfstate directly using built-in plugins
+droplet_ip: "{{ (lookup('ansible.builtin.file', tf_state_dir ~ '/terraform.tfstate') | from_json)['outputs']['droplet_ip']['value'] }}"
+
+# Hostname and domain settings
+vps_hostname: "vps"
+vps_domain: "your-domain.com" # EDIT
+vps_fqdn: "{{ vps_hostname }}.{{ vps_domain }}"
