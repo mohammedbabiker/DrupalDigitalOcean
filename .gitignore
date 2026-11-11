@@ -109,3 +109,4 @@ sites/simpletest
 .idea
 .DS_Store
 .vscode
+/venv
