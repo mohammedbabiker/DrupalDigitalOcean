@@ -7,6 +7,11 @@ resource "digitalocean_droplet" "web" {
   monitoring = var.do_monitoring
 }
 
+resource "time_sleep" "wait_for_droplet" {
+  depends_on      = [digitalocean_droplet.web]
+  create_duration = "30s"
+}
+
 resource "digitalocean_volume" "storage" {
   region                  = var.do_region
   name                    = var.do_name
@@ -21,6 +26,8 @@ resource "digitalocean_volume_attachment" "storage" {
 }
 
 resource "digitalocean_reserved_ip" "web" {
+  depends_on = [time_sleep.wait_for_droplet]
+
   droplet_id = digitalocean_droplet.web.id
   region     = digitalocean_droplet.web.region
 }
