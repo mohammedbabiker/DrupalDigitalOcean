@@ -74,12 +74,6 @@ variable "do_allow_ssh_only_from" {
 
 }
 
-variable "CLOUDFLARE_API_TOKEN" {
-  description = "Cloudflare API token"
-  type        = string
-  sensitive   = true
-}
-
 variable "cf_zone_id" {
   description = "default zone id"
   type        = string

@@ -21,5 +21,5 @@ provider "digitalocean" {
 }
 
 provider "cloudflare" {
-  api_token = var.CLOUDFLARE_API_TOKEN
+  # api_token = var.CLOUDFLARE_API_TOKEN # export on your shell
 }
