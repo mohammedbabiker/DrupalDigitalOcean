@@ -7,6 +7,6 @@ certbot certonly \
   --standalone \
   --rsa-key-size 2048 \
   --dns-digitalocean-propagation-seconds 30 \
-  --dns-digitalocean-credentials /root/certbot/credentials.yaml \ 
+  --dns-digitalocean-credentials /root/credentials.yaml \ 
   --no-eff-email -m your-email@example.com \ # Changeme 
   -d yourdomain.com # Changeme
