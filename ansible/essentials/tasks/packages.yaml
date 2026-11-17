@@ -11,7 +11,9 @@
       - git
       - curl
       - gnupg
+      - unzip
       - python3-pip
+      - python3-pymysql
       - python3-setuptools
       - ca-certificates
       - iptables
