@@ -7,5 +7,5 @@ droplet_ip: "{{ (lookup('ansible.builtin.file', tf_state_dir ~ '/terraform.tfsta
 
 # Hostname and domain settings
 vps_hostname: "vps"
-vps_domain: "your-domain.com" # EDIT
+vps_domain: "your-domain.com" # Changeme
 vps_fqdn: "{{ vps_hostname }}.{{ vps_domain }}"
