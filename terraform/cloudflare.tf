@@ -1,7 +1,7 @@
 resource "cloudflare_dns_record" "www" {
   for_each = toset(var.cf_record_name)
 
-  depends_on = [digitalocean_droplet.web]
+  depends_on = [digitalocean_reserved_ip.web]
   zone_id    = var.cf_zone_id
   name       = each.key
   ttl        = var.cf_ttl
