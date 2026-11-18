@@ -70,4 +70,13 @@ resource "digitalocean_firewall" "web" {
     protocol              = "icmp"
     destination_addresses = ["0.0.0.0/0", "::/0"]
   }
+}}
+
+resource "local_file" "ansible_inventory" {
+  content = templatefile("${path.module}/templates/host.yaml.tftpl", {
+    reserved_ip          = digitalocean_reserved_ip.web.ip_address
+    ssh_private_key_path = var.do_ssh_private_key_path
+  })
+  filename        = "${path.module}/../ansible/inventory/host.yaml"
+  file_permission = "0644"
 }
