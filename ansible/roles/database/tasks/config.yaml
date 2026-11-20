@@ -4,7 +4,6 @@
       - python3-pymysql
     state: present
     update_cache: yes
-  become: true
 
 - name: Set root password for MySQL
   community.mysql.mysql_user:
@@ -66,13 +65,17 @@
 - name: Create Drupal user and grant privileges
   community.mysql.mysql_user:
     name: "{{ drupal_db_user }}"
-    host: localhost
+    host: "{{ item }}"
     password: "{{ drupal_db_pass }}"
-    priv: "drupal_db_name.*:ALL"
+    priv: "{{ drupal_db_name }}.*:ALL"
+    append_privs: false
     state: present
     login_user: root
     login_password: "{{ db_root_password }}"
     column_case_sensitive: true
+  loop:
+    - localhost
+    - 127.0.0.1
  
 - name: Flush MySQL privileges
   community.mysql.mysql_query:

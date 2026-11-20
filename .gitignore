@@ -110,3 +110,10 @@ sites/simpletest
 .DS_Store
 .vscode
 /venv
+/ansible/hostname/defaults/main.yaml
+/ansible/drupal/files/drupal
+/ansible/certbot/certbot/get-certs.sh
+/ansible/roles/certbot/files/get-certs.sh
+/ansible/roles/essentials/files/11-lo.network
+/ansible/roles/essentials/files/br0.network
+/ansible/roles/hostname/defaults/main.yaml

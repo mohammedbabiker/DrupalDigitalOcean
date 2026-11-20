@@ -1,0 +1,49 @@
+---
+- name: Clone Drupal project repository from GitHub
+  ansible.builtin.git:
+    repo: "{{ github_repo_url }}"
+    dest: /var/www/drupal
+    version: main
+    force: false
+  # If using a private repo with an SSH deploy key, add:
+  # key_file: /root/.ssh/id_ed25519 # Changme
+
+- name: Download and install Composer globally
+  ansible.builtin.shell: |
+    curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+  args:
+    creates: /usr/local/bin/composer
+
+- name: Install Drupal site dependencies with Composer
+  become_user: www-data
+  community.general.composer:
+    command: install
+    working_dir: /var/www/drupal
+    no_dev: true
+    optimize_autoloader: true
+  environment:
+    COMPOSER_ALLOW_SUPERUSER: "1"
+
+- name: Ensure Drush is installed inside the Drupal project via Composer
+  community.general.composer:
+    command: require
+    arguments: drush/drush
+    working_dir: /var/www/drupal
+  environment:
+    COMPOSER_ALLOW_SUPERUSER: "1"
+
+- name: Create symlink for Drush in /usr/local/bin
+  ansible.builtin.file:
+    src: /var/www/drupal/vendor/bin/drush
+    dest: /usr/local/bin/drush
+    state: link
+    force: true
+
+- name: Add vendor/bin to system-wide PATH for interactive SSH users
+  ansible.builtin.copy:
+    dest: /etc/profile.d/drupal-drush.sh
+    mode: '0644'
+    content: |
+      export PATH="$PATH:/var/www/drupal/vendor/bin"
+
+- include_tasks: data.yaml

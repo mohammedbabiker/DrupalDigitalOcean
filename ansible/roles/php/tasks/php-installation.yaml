@@ -24,8 +24,3 @@
     autoclean: yes
     autoremove: yes
   
-- name: Ensure apache2 is stop and disable
-  ansible.builtin.service:
-    name: apache2
-    state: stopped
-    enabled: no
