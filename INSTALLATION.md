@@ -1,4 +1,4 @@
-# Install the site with composer
+# Install the site with composer (VM provisioning)
 
 ##  Clone The Repo
 ```bash
@@ -81,3 +81,18 @@ search for config_sync on settings.php and update the path to *config/sync*
 ```bash
   drush cim
 ```
+
+# Install the site Terraform/Ansinle
+
+clone the repo
+
+create a venv python invoronment for ansible if you dont have it.
+
+setup all .example file
+
+run terraform
+
+update ip for ssh/config
+
+dig @1.1.1.1 vps.mohammedworkspace.my.id +short
+

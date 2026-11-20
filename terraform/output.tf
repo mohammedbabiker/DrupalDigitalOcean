@@ -10,8 +10,6 @@ output "reserved_ip" {
 }
 
 output "ssh_command" {
-  description = "SSH commands for all droplets"
-  value       = "ssh -i ${var.do_ssh_private_key_path} root@${digitalocean_droplet.web.ipv4_address}"
+  description = "SSH commands via Reserved IP"
+  value       = "ssh -i ${var.do_ssh_private_key_path} root@${digitalocean_reserved_ip.web.ip_address}"
 }
-
-

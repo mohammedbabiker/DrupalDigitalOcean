@@ -1,0 +1,15 @@
+---
+- name: Restart Nginx
+  become: true
+  ansible.builtin.command:
+    name: nginx
+    state: restarted
+    enabled: true
+    daemon_reload: true
+
+- name: Execute Nginx Restart
+  become: true
+  ansible.builtin.systemd:
+    name: nginx
+    state: restarted
+    enabled: true

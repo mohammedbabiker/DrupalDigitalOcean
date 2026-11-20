@@ -14,7 +14,7 @@ resource "time_sleep" "wait_for_droplet" {
 
 resource "digitalocean_volume" "storage" {
   region                  = var.do_region
-  name                    = var.do_name
+  name                    = "${var.do_name}-storage"
   size                    = 40
   initial_filesystem_type = "ext4"
   description             = "backup storage"
@@ -45,6 +45,12 @@ resource "digitalocean_firewall" "web" {
 
   inbound_rule {
     protocol         = "tcp"
+    port_range       = "80"
+    source_addresses = ["0.0.0.0/0", "::/0"]
+  }
+
+  inbound_rule {
+    protocol         = "tcp"
     port_range       = "443"
     source_addresses = ["0.0.0.0/0", "::/0"]
   }
@@ -70,4 +76,34 @@ resource "digitalocean_firewall" "web" {
     protocol              = "icmp"
     destination_addresses = ["0.0.0.0/0", "::/0"]
   }
+
+  # Required for apt-get update (Ubuntu & DigitalOcean mirrors use HTTP port 80)
+  outbound_rule {
+    protocol              = "tcp"
+    port_range            = "80"
+    destination_addresses = ["0.0.0.0/0", "::/0"]
+  }
+
+  # Required for HTTPS repos, git clone, pip, curl, and Docker Hub
+  outbound_rule {
+    protocol              = "tcp"
+    port_range            = "443"
+    destination_addresses = ["0.0.0.0/0", "::/0"]
+  }
+
+  # Optional: NTP time synchronization (recommended for SSL certificates)
+  outbound_rule {
+    protocol              = "udp"
+    port_range            = "123"
+    destination_addresses = ["0.0.0.0/0", "::/0"]
+  }
+}
+
+resource "local_file" "ansible_inventory" {
+  content = templatefile("${path.module}/templates/host.yaml.tftpl", {
+    reserved_ip          = digitalocean_reserved_ip.web.ip_address
+    ssh_private_key_path = var.do_ssh_private_key_path
+  })
+  filename        = "${path.module}/../ansible/inventory/host.yaml"
+  file_permission = "0644"
 }

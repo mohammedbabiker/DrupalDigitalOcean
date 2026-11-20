@@ -1,8 +1,32 @@
-- hosts: main
+---
+- name: Deploy Drupal Stack on DigitalOcean
+  hosts: server
+  become: true
+
   roles:
-    - hostname
-    - essentials
-    - nginx
-    - php
-    - database
-    - certbot
+    - role: hostname
+      tags: [hostname, init]
+
+    - role: essentials
+      tags: [essentials, init]
+
+    - role: security 
+      tags: [security]
+
+    - role: database
+      tags: [database, db]
+
+    - role: php
+      tags: [php]
+
+    - role: nginx
+      tags: [nginx, web]
+
+    - role: deploy
+      tags: [deploy, drupal, app]
+
+    - role: certbot
+      tags: [certbot, ssl]
+
+    - role: drupal
+      tags: [drupal_vhost, web]

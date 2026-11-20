@@ -10,7 +10,7 @@ do_ssh_private_key_path = "~/.ssh/id_rsa"
 
 # CloudFlare
 cf_zone_id     = "your-zone-id" # Get it from cloudfalre domain details page
-cf_record_name = ["@", "www"]
+cf_record_name = ["@", "www", "vps"]
 cf_type        = "A"
 cf_proxied     = true
 cf_ttl         = 3600

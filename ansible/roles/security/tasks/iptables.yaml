@@ -1,0 +1,17 @@
+---
+- name: Deploy IPv4 iptables rules with syntax validation
+  ansible.builtin.copy:
+    src: iptables.rules
+    dest: /etc/iptables/rules.v4
+    owner: root
+    group: root
+    mode: "0644"
+    backup: true
+    validate: "/usr/sbin/iptables-restore --test %s"
+  notify: restart netfilter-persistent
+
+- name: Ensure netfilter-persistent is enabled and started on boot
+  ansible.builtin.systemd:
+    name: netfilter-persistent
+    state: started
+    enabled: true
