@@ -1,0 +1,16 @@
+Port 22
+PermitRootLogin prohibit-password
+AuthorizedKeysFile .ssh/authorized_keys
+PubkeyAuthentication yes
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+UsePAM yes
+PrintMotd no
+MaxAuthTries 3
+X11Forwarding no
+AllowTcpForwarding no
+ClientAliveCountMax 2
+AllowAgentForwarding no
+ClientAliveInterval 300
+Subsystem sftp /usr/lib/openssh/sftp-server
+AcceptEnv LANG LC_*
