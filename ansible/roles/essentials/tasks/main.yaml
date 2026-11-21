@@ -6,6 +6,11 @@
     line: "%sudo ALL=(ALL) NOPASSWD: ALL"
     validate: /usr/sbin/visudo -cf %s
 
-- include_tasks: packages.yaml
-- include_tasks: br0.yaml
-- include_tasks: loopback.yaml
+- name: Include package installation tasks
+  ansible.builtin.include_tasks: packages.yaml
+
+- name: Include bridge network tasks
+  ansible.builtin.include_tasks: br0.yaml
+
+- name: Include loopback network tasks
+  ansible.builtin.include_tasks: loopback.yaml
