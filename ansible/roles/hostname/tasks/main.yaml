@@ -1,18 +1,24 @@
-- name: Setup hostname
+- name: Set system hostname to {{ vps_fqdn }}
   ansible.builtin.hostname:
     name: "{{ vps_fqdn }}"
     use: systemd
 
-- name: Ensure localhost entry in /etc/hosts
+- name: Map Droplet IP to FQDN and short hostname in /etc/hosts
   ansible.builtin.lineinfile:
     path: /etc/hosts
-    regexp: '^127\.0\.0\.1\s+'
-    line: 127.0.0.1 localhost.localdomain localhost
-    state: present
-
-- name: Ensure Droplet FQDN entry in /etc/hosts
-  ansible.builtin.lineinfile:
-    path: /etc/hosts
-    regexp: ".*{{ vps_fqdn | regex_escape }}.*"
+    regexp: '^{{ droplet_ip }}\s+'
     line: "{{ droplet_ip }} {{ vps_fqdn }} {{ vps_hostname }}"
     state: present
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Ensure 127.0.1.1 maps to FQDN in /etc/hosts
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1\s+'
+    line: "127.0.1.1 {{ vps_fqdn }} {{ vps_hostname }}"
+    state: present
+    owner: root
+    group: root
+    mode: '0644'
