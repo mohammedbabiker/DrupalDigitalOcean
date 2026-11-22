@@ -1,0 +1,91 @@
+---
+- name: Create encrypted Drupal backup and download to local machine
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    drupal_root: /var/www/drupal
+    local_backup_dir: "{{ lookup('env', 'HOME') }}/drupal-backups"
+    backup_stamp: "{{ ansible_date_time.iso8601_basic_short }}"
+
+  tasks:
+    - name: Ensure gnupg is installed on the VPS
+      ansible.builtin.apt:
+        name: gnupg
+        state: present
+
+    - name: Ensure local backup directories exist on your Mac
+      delegate_to: localhost
+      become: false
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0700"
+      loop:
+        - "{{ local_backup_dir }}"
+        - "{{ local_backup_dir }}/snapshots"
+
+    - name: Dump, encrypt, and download database and media files
+      block:
+        - name: Create temporary root-only backup workspace on VPS
+          ansible.builtin.file:
+            path: /tmp/drupal-backup
+            state: directory
+            owner: root
+            group: root
+            mode: "0700"
+
+        - name: Write temporary passphrase file on VPS
+          ansible.builtin.copy:
+            content: "{{ backup_passphrase }}\n"
+            dest: /tmp/drupal-backup/.pass
+            owner: root
+            group: root
+            mode: "0600"
+          no_log: true
+
+        - name: Dump MariaDB, compress, and encrypt with AES-256
+          ansible.builtin.shell:
+            cmd: |
+              set -euo pipefail
+              sudo -u www-data HOME=/tmp {{ drupal_root }}/vendor/bin/drush --root={{ drupal_root }} sql:dump \
+                | gzip -9 \
+                | gpg --batch --yes --symmetric --cipher-algo AES256 --passphrase-file /tmp/drupal-backup/.pass \
+                  -o /tmp/drupal-backup/latest-db.sql.gz.gpg
+            executable: /bin/bash
+
+        - name: Archive sites/default/files and encrypt with AES-256
+          ansible.builtin.shell:
+            cmd: |
+              set -euo pipefail
+              tar -czf - -C {{ drupal_root }}/sites/default/files . \
+                | gpg --batch --yes --symmetric --cipher-algo AES256 --passphrase-file /tmp/drupal-backup/.pass \
+                  -o /tmp/drupal-backup/latest-files.tar.gz.gpg
+            executable: /bin/bash
+
+        - name: Download encrypted database backup to Mac
+          ansible.builtin.fetch:
+            src: /tmp/drupal-backup/latest-db.sql.gz.gpg
+            dest: "{{ local_backup_dir }}/latest-db.sql.gz.gpg"
+            flat: true
+
+        - name: Download encrypted media archive to Mac
+          ansible.builtin.fetch:
+            src: /tmp/drupal-backup/latest-files.tar.gz.gpg
+            dest: "{{ local_backup_dir }}/latest-files.tar.gz.gpg"
+            flat: true
+
+        - name: Save a dated snapshot copy on your Mac
+          delegate_to: localhost
+          become: false
+          ansible.builtin.copy:
+            src: "{{ local_backup_dir }}/latest-db.sql.gz.gpg"
+            dest: "{{ local_backup_dir }}/snapshots/db-{{ backup_stamp }}.sql.gz.gpg"
+            mode: "0600"
+
+      always:
+        - name: Remove temporary backup workspace and passphrase from VPS
+          ansible.builtin.file:
+            path: /tmp/drupal-backup
+            state: absent
