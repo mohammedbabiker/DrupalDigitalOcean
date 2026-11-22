@@ -1,0 +1,22 @@
+uuid: 3e33eaa1-751a-41f9-909f-e94e4aff1272
+langcode: en
+status: true
+dependencies:
+  module:
+    - help
+  theme:
+    - material_base_mdc
+_core:
+  default_config_hash: FWOV3_8GEBT9RTT56jlnC7ibCO_qK8r_oom8qXF0y3c
+id: material_base_mdc_help
+theme: material_base_mdc
+region: content
+weight: -30
+provider: null
+plugin: help_block
+settings:
+  id: help_block
+  label: Help
+  label_display: '0'
+  provider: help
+visibility: {  }

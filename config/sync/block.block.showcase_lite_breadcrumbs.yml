@@ -1,0 +1,22 @@
+uuid: 870ddc7a-f1d6-410e-9252-11a29087b4a5
+langcode: en
+status: true
+dependencies:
+  module:
+    - system
+  theme:
+    - showcase_lite
+_core:
+  default_config_hash: bpEStXVi9THO0eMeOf30Hxt6No0GTUK8DfSUpWEEmx8
+id: showcase_lite_breadcrumbs
+theme: showcase_lite
+region: banner
+weight: -5
+provider: null
+plugin: system_breadcrumb_block
+settings:
+  id: system_breadcrumb_block
+  label: Breadcrumbs
+  label_display: '0'
+  provider: system
+visibility: {  }
