@@ -1,31 +1,49 @@
-- name: Install nginx
+---
+- name: Install Nginx
   ansible.builtin.apt:
     name: nginx
     state: present
+    update_cache: true
+    cache_valid_time: 3600
 
-- name: Ensure nginx is started and enabled
-  ansible.builtin.service:
-    name: nginx
-    state: started
-    enabled: yes
-
-- name: Remove default nginx page
+- name: Remove default Ubuntu welcome page
   ansible.builtin.file:
     path: /var/www/html/index.nginx-debian.html
     state: absent
 
-- name: Add custom page
-  ansible.builtin.copy:
-    dest: /var/www/html/index.html
-    content: |
-      <!DOCTYPE html>
-      <html>
-      <body>
-      <h1 style="text-align: center; margin-top: 5rem;">Nginx server is up and running.</h1>
-      </body>
-      </html>
+- name: Remove stock Nginx default site symlink
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: reload nginx
 
-- name: Restart nginx service to apply
-  ansible.builtin.service:
+- name: Deploy global Nginx hardening and upload limits
+  ansible.builtin.copy:
+    src: 99-hardening.conf
+    dest: /etc/nginx/conf.d/99-hardening.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: reload nginx
+
+- name: Deploy catch-all default_server block
+  ansible.builtin.copy:
+    src: 00-catchall.conf
+    dest: /etc/nginx/sites-available/00-catchall.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: reload nginx
+
+- name: Enable catch-all default_server site
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/00-catchall.conf
+    dest: /etc/nginx/sites-enabled/00-catchall.conf
+    state: link
+  notify: reload nginx
+
+- name: Ensure Nginx is started and enabled on boot
+  ansible.builtin.systemd:
     name: nginx
-    state: restarted
+    state: started
+    enabled: true
