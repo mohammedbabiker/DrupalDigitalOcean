@@ -1,0 +1,40 @@
+name: Deploy Drupal to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible-core
+          ansible-galaxy collection install community.general
+
+      - name: Configure SSH key and known host
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Run Ansible release playbook
+        run: |
+          ansible-playbook ansible/release.yaml \
+            -i "${{ secrets.VPS_HOST }}," \
+            -u "${{ secrets.VPS_USER }}" \
+            --private-key ~/.ssh/deploy_key \
+            -e "github_repo_url=${{ secrets.DRUPAL_REPO_URL }}" \
+            -e "deploy_domain=mohammedworkspace.my.id"
