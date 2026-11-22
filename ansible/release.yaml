@@ -51,6 +51,24 @@
         patterns: "*.yml"
       register: drupal_config_files
 
+    - name: Ensure root-only database backup directory exists
+      ansible.builtin.file:
+        path: /var/backups/drupal
+        state: directory
+        owner: root
+        group: root
+        mode: "0700"
+
+    - name: Export pre-deploy database safety backup and prune backups older than 7 days
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          sudo -u www-data HOME=/tmp {{ drupal_root }}/vendor/bin/drush \
+            --root={{ drupal_root }} sql:dump | gzip > /var/backups/drupal/pre-release-$(date +%Y%m%d-%H%M%S).sql.gz
+          find /var/backups/drupal -name 'pre-release-*.sql.gz' -mtime +7 -delete
+        executable: /bin/bash
+      changed_when: true
+
     - name: Apply Drupal database updates and configuration safely
       block:
         - name: Enable Drupal maintenance mode
@@ -82,6 +100,15 @@
           when: (drupal_config_files.matched | int) > 0
           register: drush_cim
           changed_when: "'There are no changes to import' not in drush_cim.stdout and 'There are no changes to import' not in drush_cim.stderr"
+        
+        - name: Run Drupal post-config deploy hooks
+          become_user: www-data
+          ansible.builtin.command:
+            cmd: "{{ drupal_root }}/vendor/bin/drush --root={{ drupal_root }} --uri=https://{{ drupal_domain }} deploy:hook -y"
+            chdir: "{{ drupal_root }}"
+          environment:
+            HOME: /tmp
+          changed_when: false
 
       always:
         - name: Disable Drupal maintenance mode unconditionally

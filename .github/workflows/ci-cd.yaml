@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup PHP 8.3 and Composer
         uses: shivammathur/setup-php@v2
@@ -39,7 +39,7 @@ jobs:
       cancel-in-progress: false
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Verify required secrets and playbook exist
         env:
@@ -59,43 +59,19 @@ jobs:
           sudo apt-get install -y ansible-core
           ansible-galaxy collection install community.general
 
-      - name: Configure SSH key and test connection
-        env:
-          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_USER: ${{ secrets.VPS_USER }}
+      - name: Configure SSH key and known host
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          printf '%s\n' "$VPS_SSH_KEY" | tr -d '\r' > ~/.ssh/deploy_key
+          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-
-          # Fails immediately if the secret is a .pub key, corrupted, or has a passphrase
-          ssh-keygen -y -P "" -f ~/.ssh/deploy_key | ssh-keygen -lf -
-
-          CLEAN_HOST="$(printf '%s' "$VPS_HOST" | tr -d '[:space:]')"
-          CLEAN_USER="$(printf '%s' "$VPS_USER" | tr -d '[:space:]')"
-          ssh-keyscan -T 15 -H "$CLEAN_HOST" >> ~/.ssh/known_hosts
-
-          # Direct SSH test before Ansible runs
-          ssh -vv -i ~/.ssh/deploy_key \
-            -o IdentitiesOnly=yes \
-            -o BatchMode=yes \
-            "${CLEAN_USER}@${CLEAN_HOST}" "echo SSH_OK"
+          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Run Ansible release playbook
-        env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_USER: ${{ secrets.VPS_USER }}
-          DRUPAL_REPO_URL: ${{ secrets.DRUPAL_REPO_URL }}
         run: |
-          CLEAN_HOST="$(printf '%s' "$VPS_HOST" | tr -d '[:space:]')"
-          CLEAN_USER="$(printf '%s' "$VPS_USER" | tr -d '[:space:]')"
           ansible-playbook ansible/release.yaml \
-            -i "${CLEAN_HOST}," \
-            -u "${CLEAN_USER}" \
+            -i "${{ secrets.VPS_HOST }}," \
+            -u "${{ secrets.VPS_USER }}" \
             --private-key ~/.ssh/deploy_key \
-            -e "ansible_user=${CLEAN_USER}" \
-            -e "ansible_ssh_private_key_file=~/.ssh/deploy_key" \
-            -e "github_repo_url=${DRUPAL_REPO_URL}" \
+            -e "github_repo_url=${{ secrets.DRUPAL_REPO_URL }}" \
             -e "deploy_domain=mohammedworkspace.my.id"
