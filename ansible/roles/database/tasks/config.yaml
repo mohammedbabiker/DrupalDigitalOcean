@@ -1,29 +1,26 @@
-- name: Ensure MySQL Python dependencies are installed
-  ansible.builtin.apt:
-    name:
-      - python3-pymysql
-    state: present
-    update_cache: yes
-
-- name: Set root password for MySQL
+- name: Set root password for MariaDB (localhost)
   community.mysql.mysql_user:
     name: root
+    host: localhost
     password: "{{ db_root_password }}"
-    login_password: " "
-    host_all: true
+    login_user: root
+    login_password: "{{ db_root_password }}"
     column_case_sensitive: true
     check_implicit_admin: true
     login_unix_socket: /var/run/mysqld/mysqld.sock
     state: present
+  no_log: true
 
 - name: Remove anonymous users
   community.mysql.mysql_user:
-    name: ''
+    name: ""
     host_all: true
     state: absent
     login_user: root
     login_password: "{{ db_root_password }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
     column_case_sensitive: true
+  no_log: true
 
 - name: Disallow root login remotely
   community.mysql.mysql_user:
@@ -31,12 +28,14 @@
     host: "{{ item }}"
     state: absent
     login_user: root
-    column_case_sensitive: true
     login_password: "{{ db_root_password }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    column_case_sensitive: true
   loop:
     - "%"
     - "::1"
     - "0.0.0.0"
+  no_log: true
 
 - name: Remove test database
   community.mysql.mysql_db:
@@ -44,25 +43,21 @@
     state: absent
     login_user: root
     login_password: "{{ db_root_password }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  no_log: true
   
-- name: Reload privilege tables
-  community.mysql.mysql_user:
-    login_user: root
-    login_password: "{{ db_root_password }}"
-    column_case_sensitive: true
-    name: root
-    host: localhost
-    priv: '*.*:ALL,GRANT'
-    state: present
-  
-- name: Create Drupal database
+- name: Create Drupal database with utf8mb4 encoding
   community.mysql.mysql_db:
     name: "{{ drupal_db_name }}"
+    encoding: utf8mb4
+    collation: utf8mb4_unicode_ci
     state: present
     login_user: root
     login_password: "{{ db_root_password }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  no_log: true
   
-- name: Create Drupal user and grant privileges
+- name: Create Drupal database user and grant database-only privileges
   community.mysql.mysql_user:
     name: "{{ drupal_db_user }}"
     host: "{{ item }}"
@@ -72,13 +67,10 @@
     state: present
     login_user: root
     login_password: "{{ db_root_password }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
     column_case_sensitive: true
   loop:
     - localhost
     - 127.0.0.1
+  no_log: true
  
-- name: Flush MySQL privileges
-  community.mysql.mysql_query:
-    login_user: root
-    login_password: "{{ db_root_password }}"
-    query: "FLUSH PRIVILEGES;"
