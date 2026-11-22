@@ -1,4 +1,22 @@
 ---
+- name: Ensure deployment prerequisites are installed
+  ansible.builtin.apt:
+    pkg:
+      - git
+      - curl
+      - unzip
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Ensure drupal parent directory exists
+  ansible.builtin.file:
+    path: /var/www/drupal
+    state: directory
+    owner: root
+    group: www-data
+    mode: "0755"
+
 - name: Clone Drupal project repository from GitHub
   ansible.builtin.git:
     repo: "{{ github_repo_url }}"
@@ -8,14 +26,25 @@
   # If using a private repo with an SSH deploy key, add:
   # key_file: /root/.ssh/id_ed25519 # Changme
 
-- name: Download and install Composer globally
+    # curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+- name: Download, verify SHA-384 signature, and install Composer globally
   ansible.builtin.shell: |
-    curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+    set -euo pipefail
+    EXPECTED_CHECKSUM="$(php -r 'copy("https://composer.github.io/installer.sig", "php://stdout");')"
+    php -r "copy('https://getcomposer.org/installer', '/tmp/composer-setup.php');"
+    ACTUAL_CHECKSUM="$(php -r "echo hash_file('sha384', '/tmp/composer-setup.php');")"
+    if [ "$EXPECTED_CHECKSUM" != "$ACTUAL_CHECKSUM" ]; then
+      rm -f /tmp/composer-setup.php
+      echo "ERROR: Invalid Composer installer checksum" >&2
+      exit 1
+    fi
+    php /tmp/composer-setup.php --quiet --install-dir=/usr/local/bin --filename=composer
+    rm -f /tmp/composer-setup.php
   args:
+    executable: /bin/bash
     creates: /usr/local/bin/composer
 
-- name: Install Drupal site dependencies with Composer
-  become_user: www-data
+- name: Install Drupal PHP dependencies with Composer (locked versions)
   community.general.composer:
     command: install
     working_dir: /var/www/drupal
@@ -24,13 +53,22 @@
   environment:
     COMPOSER_ALLOW_SUPERUSER: "1"
 
-- name: Ensure Drush is installed inside the Drupal project via Composer
-  community.general.composer:
-    command: require
-    arguments: drush/drush
-    working_dir: /var/www/drupal
-  environment:
-    COMPOSER_ALLOW_SUPERUSER: "1"
+- name: Ensure application code is read-only to www-data (owned by root:www-data)
+  ansible.builtin.file:
+    path: /var/www/drupal
+    owner: root
+    group: www-data
+    recurse: true
+
+- name: Verify Drush binary exists in vendor/bin
+  ansible.builtin.stat:
+    path: /var/www/drupal/vendor/bin/drush
+  register: drush_bin
+
+- name: Fail clearly if drush/drush is missing from composer.json
+  ansible.builtin.fail:
+    msg: "Drush is not installed in /var/www/drupal/vendor/bin/drush. Add drush/drush to your repo's composer.json and push."
+  when: not drush_bin.stat.exists
 
 - name: Create symlink for Drush in /usr/local/bin
   ansible.builtin.file:
@@ -42,8 +80,11 @@
 - name: Add vendor/bin to system-wide PATH for interactive SSH users
   ansible.builtin.copy:
     dest: /etc/profile.d/drupal-drush.sh
+    owner: root
+    group: root
     mode: '0644'
     content: |
       export PATH="$PATH:/var/www/drupal/vendor/bin"
 
-- include_tasks: data.yaml
+- name: Include database bootstrap and Drupal configuration tasks
+  ansible.builtin.include_tasks: data.yaml

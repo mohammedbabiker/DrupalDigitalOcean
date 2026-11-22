@@ -1,61 +1,93 @@
-- name: Unzip password-protected database dump
-  ansible.builtin.command:
-    cmd: unzip -o -P "{{ db_zip_password }}" /var/www/drupal/db/data.zip -d /tmp/
-    creates: /tmp/db/data.sql.gz
-  no_log: true
-
-- name: Unzip password-protected database dump
-  ansible.builtin.command:
-    cmd: gzip -d /tmp/db/data.sql.gz
-    creates: /tmp/db/data.sql
-  no_log: true
-
-- name: Strip hardcoded CREATE DATABASE and USE statements from SQL dump
-  ansible.builtin.replace:
-    path: /tmp/db/data.sql
-    regexp: '^(CREATE DATABASE|USE)\s+`?[^`;]+`?;'
-    replace: '-- \g<0>'
-
-- name: Import SQL file into existing MySQL database
-  community.mysql.mysql_db:
-    name: "{{ drupal_db_name }}"
-    state: import
-    target: /tmp/db/data.sql
+---
+- name: Check if Drupal database already contains tables
+  community.mysql.mysql_query:
     login_user: root
     login_password: "{{ db_root_password }}"
     login_unix_socket: /var/run/mysqld/mysqld.sock
-  
-- name: Remove extracted temporary SQL file for security
-  ansible.builtin.file:
-    path: /tmp/db/data.sql
-    state: absent
+    login_db: "{{ drupal_db_name }}"
+    query: "SELECT COUNT(*) AS table_count FROM information_schema.tables WHERE table_schema = %(db)s"
+    named_args:
+      db: "{{ drupal_db_name }}"
+  register: drupal_db_tables
+  no_log: true
 
-- name: Ensure sites/default directory is writable before editing settings.php
+- name: Bootstrap empty Drupal database from initial dump (runs only once)
+  when: (drupal_db_tables.query_result[0][0].table_count | int) == 0
+  block:
+    - name: Create restricted temporary directory for SQL extraction
+      ansible.builtin.file:
+        path: /root/.tmp_drupal_db
+        state: directory
+        owner: root
+        group: root
+        mode: "0700"
+
+    - name: Unzip password-protected database archive
+      ansible.builtin.command:
+        argv:
+          - unzip
+          - -o
+          - -P
+          - "{{ db_zip_password }}"
+          - /var/www/drupal/db/data.zip
+          - -d
+          - /root/.tmp_drupal_db/
+        creates: /tmp/db/data.sql.gz
+      no_log: true
+
+    - name: Decompress gzipped SQL dump
+      ansible.builtin.command:
+        cmd: gzip -df /root/.tmp_drupal_db/db/data.sql.gz
+
+    - name: Strip hardcoded CREATE DATABASE and USE statements from SQL dump
+      ansible.builtin.replace:
+        path: /root/.tmp_drupal_db/db/data.sql
+        regexp: '(?im)^(CREATE DATABASE|USE)\s+.*;'
+        # regexp: '^(CREATE DATABASE|USE)\s+`?[^`;]+`?;'
+        replace: '-- \g<0>'
+
+    - name: Import SQL file into existing MySQL database
+      community.mysql.mysql_db:
+        name: "{{ drupal_db_name }}"
+        state: import
+        target: /root/.tmp_drupal_db/db/data.sql
+        login_user: root
+        login_password: "{{ db_root_password }}"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+      no_log: true
+
+  always:
+    - name: Remove temporary SQL extraction directory unconditionally
+      ansible.builtin.file:
+        path: /root/.tmp_drupal_db
+        state: absent
+  
+- name: Harden sites/default directory (readable by www-data, writable only by root)
   ansible.builtin.file:
     path: /var/www/drupal/sites/default
     state: directory
-    owner: www-data
+    owner: root
     group: www-data
-    mode: '0755'
+    mode: "0755"
 
-- name: Create sites/default/files directory with www-data ownership
+- name: Ensure sites/default/files is writable by www-data without making files executable
   ansible.builtin.file:
     path: /var/www/drupal/sites/default/files
     state: directory
     owner: www-data
     group: www-data
-    mode: '0775'
+    mode: "u=rwX,g=rX,o="
     recurse: true
 
-- name: Copy default.settings.php to settings.php if it does not exist
+- name: Copy default.settings.php to settings.php if missing
   ansible.builtin.copy:
     src: /var/www/drupal/sites/default/default.settings.php
     dest: /var/www/drupal/sites/default/settings.php
     remote_src: true
     force: false
-    owner: www-data
+    owner: root
     group: www-data
-    mode: '0644'
+    mode: "0440"
 
 - name: Write database credentials and config_sync_directory into settings.php
   ansible.builtin.blockinfile:
@@ -77,28 +109,43 @@
       );
       $settings['hash_salt'] = '{{ drupal_hash_salt }}';
       $settings['config_sync_directory'] = '/var/www/drupal/config/sync';
+      $settings['trusted_host_patterns'] = [
+        '^{{ drupal_domain | regex_escape() }}$',
+        '^www\.{{ drupal_domain | regex_escape() }}$',
+      ];
 
-- name: Ensure /var/www/.ansible exists for www-data (fixes Ansible tmp warning)
-  ansible.builtin.file:
-    path: /var/www/.ansible/tmp
-    state: directory
-    owner: www-data
-    group: www-data
-    mode: '0700'
+- name: Check if exported Drupal config exists in config/sync
+  ansible.builtin.find:
+    paths: /var/www/drupal/config/sync
+    patterns: "*.yml"
+  register: drupal_config_files
 
-- name: Run database updates, import Drupal configuration, and rebuild cache
+- name: Run Drupal database updates
   become_user: www-data
-  ansible.builtin.shell: |
-    set -e
-    /var/www/drupal/vendor/bin/drush --root=/var/www/drupal --uri=default updatedb -y
-    /var/www/drupal/vendor/bin/drush --root=/var/www/drupal --uri=default config:import -y
-    /var/www/drupal/vendor/bin/drush --root=/var/www/drupal --uri=default cache:rebuild
-  args:
+  environment:
+    HOME: /tmp
+  ansible.builtin.command:
+    cmd: /var/www/drupal/vendor/bin/drush --root=/var/www/drupal --uri="https://{{ drupal_domain }}" updatedb -y
     chdir: /var/www/drupal
+  register: drush_updb
+  changed_when: "'No pending updates' not in drush_updb.stderr and 'No pending updates' not in drush_updb.stdout"
 
-- name: Harden settings.php permissions after setup
-  ansible.builtin.file:
-    path: /var/www/drupal/sites/default/settings.php
-    owner: www-data
-    group: www-data
-    mode: '0440'
+- name: Import Drupal configuration if sync files exist
+  become_user: www-data
+  environment:
+    HOME: /tmp
+  ansible.builtin.command:
+    cmd: /var/www/drupal/vendor/bin/drush --root=/var/www/drupal --uri="https://{{ drupal_domain }}" config:import -y
+    chdir: /var/www/drupal
+  when: drupal_config_files.matched | int > 0
+  register: drush_cim
+  changed_when: "'There are no changes to import' not in drush_cim.stdout and 'There are no changes to import' not in drush_cim.stderr"
+
+- name: Rebuild Drupal cache
+  become_user: www-data
+  environment:
+    HOME: /tmp
+  ansible.builtin.command:
+    cmd: /var/www/drupal/vendor/bin/drush --root=/var/www/drupal --uri="https://{{ drupal_domain }}" cache:rebuild
+    chdir: /var/www/drupal
+  changed_when: false
