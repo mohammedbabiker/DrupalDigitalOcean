@@ -1,0 +1,135 @@
+# Redirect all HTTP traffic to canonical HTTPS
+server {
+    listen 80;
+    listen [::]:80;
+    server_name {{ drupal_domain }} www.{{ drupal_domain }};
+
+    return 301 https://{{ drupal_domain }}$request_uri;
+}
+
+# Redirect www HTTPS to apex domain (optional, avoids duplicate SEO/cookies)
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name www.{{ drupal_domain }};
+
+    ssl_certificate /etc/letsencrypt/live/{{ drupal_domain }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ drupal_domain }}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    return 301 https://{{ drupal_domain }}$request_uri;
+}
+
+# Primary Drupal HTTPS server
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name {{ drupal_domain }};
+
+    root /var/www/drupal;
+    index index.php;
+
+    # TLS Configuration (Certbot + modern protocols)
+    ssl_certificate /etc/letsencrypt/live/{{ drupal_domain }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ drupal_domain }}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
+
+    # Security Headers (omit includeSubDomains so vps.{{ drupal_domain }} is unaffected)
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;
+
+    # --- Static Well-Known Root Files ---
+    location = /favicon.ico {
+        log_not_found off;
+        access_log off;
+    }
+
+    location = /robots.txt {
+        allow all;
+        log_not_found off;
+        access_log off;
+    }
+
+    # --- CRITICAL SECURITY BLOCKS (Must appear ABOVE the PHP handler) ---
+    # Block dotfiles (.git, .htaccess, .env, etc.)
+    location ~ (^|/)\. {
+        return 404;
+    }
+
+    # Block flat-webroot internal directories (DB dump, config sync, vendor)
+    location ~* ^/(db|config|vendor|private|tmp)/ {
+        return 404;
+    }
+
+    # Block Composer, package manifests, and Drupal settings files
+    location ~* ^/(composer\.(json|lock)|package(-lock)?\.json|yarn\.lock|phpunit\.xml.*|sites/[^/]+/settings.*\.php)$ {
+        return 404;
+    }
+
+    # Block sensitive Drupal/source file extensions & backups (matches Drupal .htaccess)
+    location ~* \.(engine|inc|install|make|module|profile|po|sh|.*sql|theme|twig|tpl(\.php)?|xtmpl|yml|yaml|txt|log)(~|\.sw[op]|\.bak|\.orig|\.save)?$ {
+        return 404;
+    }
+
+    # Block direct access to Drupal private files directory
+    location ~ ^/sites/.*/private/ {
+        return 403;
+    }
+
+    # Block PHP execution inside writable upload directories (critical RCE defense)
+    location ~* ^/sites/[^/]+/files/.*\.php$ {
+        return 403;
+    }
+
+    # Block PHP files in dotted directories (e.g., sites/example.com/...)
+    location ~ \..*/.*\.php$ {
+        return 403;
+    }
+
+    # --- Drupal 10/11 Routing ---
+    location / {
+        try_files $uri /index.php?$query_string;
+    }
+
+    location @rewrite {
+        rewrite ^ /index.php;
+    }
+
+    # Allow Drupal private file downloads handled by PHP
+    location ~ ^(/[a-z\-]+)?/system/files/ {
+        try_files $uri /index.php?$query_string;
+    }
+
+    # Generate Drupal image styles on the fly
+    location ~ ^/sites/.*/files/styles/ {
+        try_files $uri @rewrite;
+    }
+
+    # PHP-FPM execution (preserves PATH_INFO for /update.php and mitigates httpoxy)
+    location ~ '\.php$|^/update.php' {
+        fastcgi_split_path_info ^(.+?\.php)(|/.*)$;
+        set $path_info $fastcgi_path_info;
+        try_files $fastcgi_script_name =404;
+
+        include fastcgi_params;
+        fastcgi_param HTTP_PROXY "";
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_param PATH_INFO $path_info;
+        fastcgi_param QUERY_STRING $query_string;
+        fastcgi_intercept_errors on;
+        fastcgi_pass unix:/run/php/php8.3-fpm.sock;
+    }
+
+    # Cache static assets aggressively
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|webp|avif|woff|woff2)$ {
+        expires max;
+        log_not_found off;
+    }
+}
