@@ -1,12 +1,20 @@
-- name: Add PHP PPA repository
+---
+- name: Install prerequisite for managing APT PPAs
+  ansible.builtin.apt:
+    name: software-properties-common
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Add Ondrej PHP PPA repository
   ansible.builtin.apt_repository:
     repo: ppa:ondrej/php
     state: present
+    update_cache: true
+    
+- name: Include PHP installation tasks
+  ansible.builtin.include_tasks: php-installation.yaml
 
-- name: Force update apt cache
-  ansible.builtin.apt:
-    update_cache: yes
-    cache_valid_time: 0
+- name: Include PHP configuration tasks
+  ansible.builtin.include_tasks: php-config.yaml
 
-- include_tasks: php-installation.yaml
-- include_tasks: php-config.yaml

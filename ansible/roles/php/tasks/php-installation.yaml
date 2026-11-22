@@ -1,26 +1,27 @@
-- name: Install PHP 8.3 and required packages
+---
+- name: Install PHP 8.3 FPM, CLI, and required Drupal extensions
   ansible.builtin.apt:
     pkg:
-      - php8.3
       - php8.3-fpm
-      - php8.3-gd
+      - php8.3-cli
       - php8.3-common
+      - php8.3-opcache
       - php8.3-mysql
-      - php8.3-apcu
-      - php8.3-gmp
+      - php8.3-gd
       - php8.3-curl
       - php8.3-intl
       - php8.3-mbstring
-      - php8.3-xmlrpc
       - php8.3-xml
-      - php8.3-cli
       - php8.3-zip
-    install_recommends: no
+      - php8.3-apcu
+      - php8.3-gmp
+      - php8.3-bcmath
+      # - php8.3-xmlrpc
+    install_recommends: false
     state: present
-    update_cache: yes
   
-- name: Clean apt cache
+- name: Clean unused packages and apt cache
   ansible.builtin.apt:
-    autoclean: yes
-    autoremove: yes
+    autoclean: true
+    autoremove: true
   

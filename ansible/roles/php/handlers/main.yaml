@@ -1,0 +1,5 @@
+---
+- name: reload php8.3-fpm
+  ansible.builtin.systemd:
+    name: php8.3-fpm
+    state: reloaded
