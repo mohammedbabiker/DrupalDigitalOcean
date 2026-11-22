@@ -1,0 +1,104 @@
+- name: Unzip password-protected database dump
+  ansible.builtin.command:
+    cmd: unzip -o -P "{{ db_zip_password }}" /var/www/drupal/db/data.zip -d /tmp/
+    creates: /tmp/db/data.sql.gz
+  no_log: true
+
+- name: Unzip password-protected database dump
+  ansible.builtin.command:
+    cmd: gzip -d /tmp/db/data.sql.gz
+    creates: /tmp/db/data.sql
+  no_log: true
+
+- name: Strip hardcoded CREATE DATABASE and USE statements from SQL dump
+  ansible.builtin.replace:
+    path: /tmp/db/data.sql
+    regexp: '^(CREATE DATABASE|USE)\s+`?[^`;]+`?;'
+    replace: '-- \g<0>'
+
+- name: Import SQL file into existing MySQL database
+  community.mysql.mysql_db:
+    name: "{{ drupal_db_name }}"
+    state: import
+    target: /tmp/db/data.sql
+    login_user: root
+    login_password: "{{ db_root_password }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  
+- name: Remove extracted temporary SQL file for security
+  ansible.builtin.file:
+    path: /tmp/db/data.sql
+    state: absent
+
+- name: Ensure sites/default directory is writable before editing settings.php
+  ansible.builtin.file:
+    path: /var/www/drupal/sites/default
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+
+- name: Create sites/default/files directory with www-data ownership
+  ansible.builtin.file:
+    path: /var/www/drupal/sites/default/files
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0775'
+    recurse: true
+
+- name: Copy default.settings.php to settings.php if it does not exist
+  ansible.builtin.copy:
+    src: /var/www/drupal/sites/default/default.settings.php
+    dest: /var/www/drupal/sites/default/settings.php
+    remote_src: true
+    force: false
+    owner: www-data
+    group: www-data
+    mode: '0644'
+
+- name: Write database credentials and config_sync_directory into settings.php
+  ansible.builtin.blockinfile:
+    path: /var/www/drupal/sites/default/settings.php
+    insertafter: EOF
+    marker: "// {mark} ANSIBLE MANAGED DRUPAL DB SETTINGS"
+    block: |
+      $databases['default']['default'] = array (
+        'database' => '{{ drupal_db_name }}',
+        'username' => '{{ drupal_db_user }}',
+        'password' => '{{ drupal_db_pass }}',
+        'prefix' => '',
+        'host' => 'localhost',
+        'port' => '3306',
+        'isolation_level' => 'READ COMMITTED',
+        'driver' => 'mysql',
+        'namespace' => 'Drupal\\mysql\\Driver\\Database\\mysql',
+        'autoload' => 'core/modules/mysql/src/Driver/Database/mysql/',
+      );
+      $settings['hash_salt'] = '{{ drupal_hash_salt }}';
+      $settings['config_sync_directory'] = '/var/www/drupal/config/sync';
+
+- name: Ensure /var/www/.ansible exists for www-data (fixes Ansible tmp warning)
+  ansible.builtin.file:
+    path: /var/www/.ansible/tmp
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0700'
+
+- name: Run database updates, import Drupal configuration, and rebuild cache
+  become_user: www-data
+  ansible.builtin.shell: |
+    set -e
+    /var/www/drupal/vendor/bin/drush --root=/var/www/drupal --uri=default updatedb -y
+    /var/www/drupal/vendor/bin/drush --root=/var/www/drupal --uri=default config:import -y
+    /var/www/drupal/vendor/bin/drush --root=/var/www/drupal --uri=default cache:rebuild
+  args:
+    chdir: /var/www/drupal
+
+- name: Harden settings.php permissions after setup
+  ansible.builtin.file:
+    path: /var/www/drupal/sites/default/settings.php
+    owner: www-data
+    group: www-data
+    mode: '0440'

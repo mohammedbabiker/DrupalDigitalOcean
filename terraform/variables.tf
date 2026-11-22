@@ -57,7 +57,7 @@ variable "do_monitoring" {
 variable "do_ssh_private_key_path" {
   description = "Path to your SSH private key"
   type        = string
-  default     = "~/.ssh/ir_rsa"
+  default     = "~/.ssh/digitalocean"
 }
 
 variable "do_firewall_name" {

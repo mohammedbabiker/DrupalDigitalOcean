@@ -1,0 +1,30 @@
+---
+- name: Copy Drupal Nginx configuration file to sites-available
+  become: true
+  ansible.builtin.copy:
+    src: files/drupal
+    dest: /etc/nginx/sites-available/drupal
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart Nginx
+
+- name: Create symlink in sites-enabled for Drupal
+  become: true
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/drupal
+    dest: /etc/nginx/sites-enabled/drupal
+    state: link
+  notify: Restart Nginx
+
+- name: Remove default Nginx site to avoid port/default_server conflicts
+  become: true
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Restart Nginx
+
+- name: Test Nginx configuration syntax (nginx -t)
+  become: true
+  ansible.builtin.command: nginx -t
+  changed_when: false

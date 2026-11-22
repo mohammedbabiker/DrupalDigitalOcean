@@ -1,0 +1,44 @@
+export TF_VAR_do_token="$(pass show infra/digitalocean/token/full | head -n 1)"
+export CLOUDFLARE_API_TOKEN="$(pass show infra/cloudflare/token/dns.indo | head -n 1)"
+
+install ansible & an
+
+change domain on hostname role/default/main.yaml
+
+search Changeme to change what its need to change
+
+setup ssh for digitalocean
+setup api for digitalocean
+setup api for cloudflaare
+
+setup ansible host.yaml invertory file
+
+update ansible-vaule secrets
+
+
+setup tfvars credentials # keep tho api secret like TF_VAR
+
+run tf alias
+fmt
+vali
+plan
+appy
+outp
+
+setup get-cert sh scripts
+
+Domain: jfkdsl
+FQDN: vps.jfkdsl
+Ip: 78698798
+Host pridge newtowk: 10.200.0.1/24 # Found in br0.netdev
+Additinal loopback address: 10.254.254.1/32 # Found in 11-lo.network
+
+ssh root@mohammedworkspace.my.id "systemctl status nginx --no-pager && ss -tulpn | grep -E ':80|:443'"
+
+the nginx is stopped on certbot role ?
+
+ansible-playbook setup.yaml --tags "deploy,drupal_vhost" # run one role on 2
+
+TODO: dockerize the app
+
+git add ansible.cfg 

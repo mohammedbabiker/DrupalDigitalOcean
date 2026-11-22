@@ -10,6 +10,9 @@
     - role: essentials
       tags: [essentials, init]
 
+    - role: security 
+      tags: [security]
+
     - role: database
       tags: [database, db]
 
@@ -19,6 +22,11 @@
     - role: nginx
       tags: [nginx, web]
 
+    - role: deploy
+      tags: [deploy, drupal, app]
+
     - role: certbot
       tags: [certbot, ssl]
 
+    - role: drupal
+      tags: [drupal_vhost, web]
