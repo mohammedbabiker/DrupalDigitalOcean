@@ -1,0 +1,11 @@
+---
+- name: Deploy custom sysctl kernel tuning and hardening config
+  ansible.builtin.copy:
+    src: 99-hardening.conf
+    dest: /etc/sysctl.d/99-hardening.conf
+    owner: root
+    group: root
+    mode: "0644"
+    backup: true
+  notify: reload sysctl
+  

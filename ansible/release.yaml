@@ -1,0 +1,108 @@
+---
+- name: Deploy Drupal application updates
+  hosts: all
+  become: true
+  gather_facts: false
+
+  vars:
+    drupal_root: /var/www/drupal
+    drupal_branch: main
+    # Pass via group_vars/public.yaml or -e in GitHub Actions so CI never needs Ansible Vault
+    drupal_domain: "{{ deploy_domain | default('mohammedworkspace.my.id') }}"
+    drupal_repo: "{{ github_repo_url }}"
+
+  tasks:
+    - name: Pull latest Drupal code from GitHub
+      ansible.builtin.git:
+        repo: "{{ drupal_repo }}"
+        dest: "{{ drupal_root }}"
+        version: "{{ drupal_branch }}"
+        force: false
+      register: git_result
+
+    - name: Install locked PHP dependencies with Composer
+      community.general.composer:
+        command: install
+        working_dir: "{{ drupal_root }}"
+        no_dev: true
+        optimize_autoloader: true
+      environment:
+        COMPOSER_ALLOW_SUPERUSER: "1"
+
+    - name: Keep app code read-only to www-data without touching sites/default/files
+      ansible.builtin.command:
+        cmd: >
+          find {{ drupal_root }}
+          -path {{ drupal_root }}/sites/default/files -prune
+          -o ( ! -user root -o ! -group www-data )
+          -exec chown root:www-data {} +
+      changed_when: false
+
+    - name: Ensure settings.php permissions remain locked
+      ansible.builtin.file:
+        path: "{{ drupal_root }}/sites/default/settings.php"
+        owner: root
+        group: www-data
+        mode: "0440"
+
+    - name: Check if exported Drupal config exists in config/sync
+      ansible.builtin.find:
+        paths: "{{ drupal_root }}/config/sync"
+        patterns: "*.yml"
+      register: drupal_config_files
+
+    - name: Apply Drupal database updates and configuration safely
+      block:
+        - name: Enable Drupal maintenance mode
+          become_user: www-data
+          ansible.builtin.command:
+            cmd: "{{ drupal_root }}/vendor/bin/drush --root={{ drupal_root }} --uri=https://{{ drupal_domain }} state:set system.maintenance_mode 1 --input-format=integer"
+            chdir: "{{ drupal_root }}"
+          environment:
+            HOME: /tmp
+          changed_when: true
+
+        - name: Run pending Drupal database updates
+          become_user: www-data
+          ansible.builtin.command:
+            cmd: "{{ drupal_root }}/vendor/bin/drush --root={{ drupal_root }} --uri=https://{{ drupal_domain }} updatedb -y"
+            chdir: "{{ drupal_root }}"
+          environment:
+            HOME: /tmp
+          register: drush_updb
+          changed_when: "'No pending updates' not in drush_updb.stderr and 'No pending updates' not in drush_updb.stdout"
+
+        - name: Import Drupal configuration from config/sync
+          become_user: www-data
+          ansible.builtin.command:
+            cmd: "{{ drupal_root }}/vendor/bin/drush --root={{ drupal_root }} --uri=https://{{ drupal_domain }} config:import -y"
+            chdir: "{{ drupal_root }}"
+          environment:
+            HOME: /tmp
+          when: (drupal_config_files.matched | int) > 0
+          register: drush_cim
+          changed_when: "'There are no changes to import' not in drush_cim.stdout and 'There are no changes to import' not in drush_cim.stderr"
+
+      always:
+        - name: Disable Drupal maintenance mode unconditionally
+          become_user: www-data
+          ansible.builtin.command:
+            cmd: "{{ drupal_root }}/vendor/bin/drush --root={{ drupal_root }} --uri=https://{{ drupal_domain }} state:set system.maintenance_mode 0 --input-format=integer"
+            chdir: "{{ drupal_root }}"
+          environment:
+            HOME: /tmp
+          changed_when: true
+
+        - name: Rebuild Drupal cache
+          become_user: www-data
+          ansible.builtin.command:
+            cmd: "{{ drupal_root }}/vendor/bin/drush --root={{ drupal_root }} --uri=https://{{ drupal_domain }} cache:rebuild"
+            chdir: "{{ drupal_root }}"
+          environment:
+            HOME: /tmp
+          changed_when: false
+
+    - name: Reload PHP 8.3-FPM to flush OPcache cleanly
+      ansible.builtin.systemd:
+        name: php8.3-fpm
+        state: reloaded

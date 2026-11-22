@@ -73,4 +73,15 @@
     - localhost
     - 127.0.0.1
   no_log: true
+
+- name: Mark database role as bootstrapped so future runs skip it
+  community.general.ini_file:
+    path: /etc/ansible/facts.d/bootstrap.fact
+    section: state
+    option: database_done
+    value: "true"
+    owner: root
+    group: root
+    mode: "0644"
+    create: true
  
