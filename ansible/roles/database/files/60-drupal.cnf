@@ -1,0 +1,10 @@
+[mysqld]
+# Never expose MariaDB outside localhost
+bind-address = 127.0.0.1
+
+# Recommended by Drupal 10+ to prevent database deadlocks
+transaction-isolation = READ-COMMITTED
+
+# Safe baseline for UTF-8mb4
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci

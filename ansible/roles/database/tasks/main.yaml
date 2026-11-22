@@ -1,0 +1,31 @@
+---
+- name: Install MariaDB server, client, and Python MySQL library
+  ansible.builtin.apt:
+    pkg:
+      - mariadb-server
+      - mariadb-client
+      - python3-pymysql
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Deploy Drupal MariaDB configuration drop-in
+  ansible.builtin.copy:
+    src: 60-drupal.cnf
+    dest: /etc/mysql/mariadb.conf.d/60-drupal.cnf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart mariadb
+
+- name: Ensure MariaDB service is started and enabled on boot
+  ansible.builtin.systemd:
+    name: mariadb
+    state: started
+    enabled: true
+
+- name: Flush handlers before database configuration
+  ansible.builtin.meta: flush_handlers
+
+- name: Include database hardening and Drupal setup tasks
+  ansible.builtin.include_tasks: config.yaml
