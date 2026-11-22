@@ -1,67 +1,4 @@
 ---
-- name: Check if Drupal database already contains tables
-  community.mysql.mysql_query:
-    login_user: root
-    login_password: "{{ db_root_password }}"
-    login_unix_socket: /var/run/mysqld/mysqld.sock
-    login_db: "{{ drupal_db_name }}"
-    query: "SELECT COUNT(*) AS table_count FROM information_schema.tables WHERE table_schema = %(db)s"
-    named_args:
-      db: "{{ drupal_db_name }}"
-  register: drupal_db_tables
-  no_log: true
-
-- name: Bootstrap empty Drupal database from initial dump (runs only once)
-  when: (drupal_db_tables.query_result[0][0].table_count | int) == 0
-  block:
-    - name: Create restricted temporary directory for SQL extraction
-      ansible.builtin.file:
-        path: /root/.tmp_drupal_db
-        state: directory
-        owner: root
-        group: root
-        mode: "0700"
-
-    - name: Unzip password-protected database archive
-      ansible.builtin.command:
-        argv:
-          - unzip
-          - -o
-          - -P
-          - "{{ db_zip_password }}"
-          - /var/www/drupal/db/data.zip
-          - -d
-          - /root/.tmp_drupal_db/
-        creates: /tmp/db/data.sql.gz
-      no_log: true
-
-    - name: Decompress gzipped SQL dump
-      ansible.builtin.command:
-        cmd: gzip -df /root/.tmp_drupal_db/db/data.sql.gz
-
-    - name: Strip hardcoded CREATE DATABASE and USE statements from SQL dump
-      ansible.builtin.replace:
-        path: /root/.tmp_drupal_db/db/data.sql
-        regexp: '(?im)^(CREATE DATABASE|USE)\s+.*;'
-        # regexp: '^(CREATE DATABASE|USE)\s+`?[^`;]+`?;'
-        replace: '-- \g<0>'
-
-    - name: Import SQL file into existing MySQL database
-      community.mysql.mysql_db:
-        name: "{{ drupal_db_name }}"
-        state: import
-        target: /root/.tmp_drupal_db/db/data.sql
-        login_user: root
-        login_password: "{{ db_root_password }}"
-        login_unix_socket: /var/run/mysqld/mysqld.sock
-      no_log: true
-
-  always:
-    - name: Remove temporary SQL extraction directory unconditionally
-      ansible.builtin.file:
-        path: /root/.tmp_drupal_db
-        state: absent
-  
 - name: Harden sites/default directory (readable by www-data, writable only by root)
   ansible.builtin.file:
     path: /var/www/drupal/sites/default
@@ -69,15 +6,6 @@
     owner: root
     group: www-data
     mode: "0755"
-
-- name: Ensure sites/default/files is writable by www-data without making files executable
-  ansible.builtin.file:
-    path: /var/www/drupal/sites/default/files
-    state: directory
-    owner: www-data
-    group: www-data
-    mode: "u=rwX,g=rX,o="
-    recurse: true
 
 - name: Copy default.settings.php to settings.php if missing
   ansible.builtin.copy:
@@ -113,6 +41,118 @@
         '^{{ drupal_domain | regex_escape() }}$',
         '^www\.{{ drupal_domain | regex_escape() }}$',
       ];
+  no_log: true
+
+- name: Check if Drupal database already contains tables
+  community.mysql.mysql_query:
+    login_user: root
+    login_password: "{{ db_root_password }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    login_db: "{{ drupal_db_name }}"
+    query: "SELECT COUNT(*) AS table_count FROM information_schema.tables WHERE table_schema = %(db)s"
+    named_args:
+      db: "{{ drupal_db_name }}"
+  register: drupal_db_tables
+  no_log: true
+
+- name: Set db_is_empty helper fact
+  ansible.builtin.set_fact:
+    db_is_empty: "{{ (drupal_db_tables.query_result[0][0].table_count | int) == 0 }}"
+
+- name: Ensure gnupg is installed for encrypted backup restore
+  ansible.builtin.apt:
+    name: gnupg
+    state: present
+  when: db_is_empty
+
+- name: Check for local encrypted database backup on Mac
+  delegate_to: localhost
+  become: false
+  ansible.builtin.stat:
+    path: "{{ lookup('env', 'HOME') }}/drupal-backups/latest-db.sql.gz.gpg"
+  register: local_db_backup
+  when: db_is_empty
+
+- name: Check for local encrypted media archive on Mac
+  delegate_to: localhost
+  become: false
+  ansible.builtin.stat:
+    path: "{{ lookup('env', 'HOME') }}/drupal-backups/latest-files.tar.gz.gpg"
+  register: local_files_backup
+  when: db_is_empty
+
+- name: Restore encrypted DB and media from local Mac backup (fresh server only)
+  when:
+    - db_is_empty
+    - local_db_backup.stat.exists
+  block:
+    - name: Create temporary root-only restore workspace on VPS
+      ansible.builtin.file:
+        path: /tmp/drupal-restore
+        state: directory
+        owner: root
+        group: root
+        mode: "0700"
+
+    - name: Write temporary passphrase file on VPS
+      ansible.builtin.copy:
+        content: "{{ backup_passphrase }}\n"
+        dest: /tmp/drupal-restore/.pass
+        owner: root
+        group: root
+        mode: "0600"
+      no_log: true
+
+    - name: Upload encrypted database backup from Mac to VPS
+      ansible.builtin.copy:
+        src: "{{ lookup('env', 'HOME') }}/drupal-backups/latest-db.sql.gz.gpg"
+        dest: /tmp/drupal-restore/latest-db.sql.gz.gpg
+        owner: root
+        group: root
+        mode: "0600"
+
+    - name: Decrypt and import database into MariaDB
+      ansible.builtin.shell:
+        cmd: |
+          set -euo pipefail
+          gpg --batch --yes --decrypt --passphrase-file /tmp/drupal-restore/.pass /tmp/drupal-restore/latest-db.sql.gz.gpg \
+            | gunzip \
+            | sudo -u www-data HOME=/tmp /var/www/drupal/vendor/bin/drush --root=/var/www/drupal sql:cli
+        executable: /bin/bash
+
+    - name: Upload encrypted media archive from Mac to VPS
+      when: local_files_backup.stat.exists
+      ansible.builtin.copy:
+        src: "{{ lookup('env', 'HOME') }}/drupal-backups/latest-files.tar.gz.gpg"
+        dest: /tmp/drupal-restore/latest-files.tar.gz.gpg
+        owner: root
+        group: root
+        mode: "0600"
+
+    - name: Decrypt and restore sites/default/files media directory
+      when: local_files_backup.stat.exists
+      ansible.builtin.shell:
+        cmd: |
+          set -euo pipefail
+          mkdir -p /var/www/drupal/sites/default/files
+          gpg --batch --yes --decrypt --passphrase-file /tmp/drupal-restore/.pass /tmp/drupal-restore/latest-files.tar.gz.gpg \
+            | tar -xzf - -C /var/www/drupal/sites/default/files
+        executable: /bin/bash
+
+  always:
+    - name: Remove temporary restore workspace and passphrase from VPS
+      ansible.builtin.file:
+        path: /tmp/drupal-restore
+        state: absent
+
+- name: Ensure sites/default/files is writable by www-data without making files executable
+  ansible.builtin.file:
+    path: /var/www/drupal/sites/default/files
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: "u=rwX,g=rX,o="
+    recurse: true
 
 - name: Check if exported Drupal config exists in config/sync
   ansible.builtin.find:
