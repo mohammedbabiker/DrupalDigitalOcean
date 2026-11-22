@@ -10,6 +10,9 @@
     - role: essentials
       tags: [essentials, init]
 
+    - role: sysctl
+      tags: [sysctl, security]
+
     - role: security 
       tags: [security]
 
