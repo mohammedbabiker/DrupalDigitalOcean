@@ -4,7 +4,7 @@ variable "do_token" {
   sensitive   = true
   validation {
     condition     = length(var.do_token) >= 40
-    error_message = "Token should be at most 20 characters long"
+    error_message = "DigitalOcean API token must be at least 40 characters long."
   }
 }
 
@@ -38,7 +38,7 @@ variable "do_region" {
 variable "do_size" {
   description = "Droplet size"
   type        = string
-  default     = "s-1vcpu-512mb-10gb"
+  default     = "s-1vcpu-2gb"
 
 }
 
