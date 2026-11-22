@@ -1,53 +1,72 @@
-- name: Install certbot packages
+---
+- name: Install Certbot and Cloudflare DNS plugin
   ansible.builtin.apt:
     pkg:
       - certbot
-      - python3-certbot-dns-digitalocean
+      - python3-certbot-dns-cloudflare
     state: present
-  
-- name: Stop nginx service
-  ansible.builtin.service:
-    name: nginx
-    state: stopped
+    update_cache: true
+    cache_valid_time: 3600
 
-- name: Copy certbot configuration
-  ansible.builtin.copy:
-    src: files/credential.yaml
-    dest: /root/certbot/credentials.yaml
+- name: Create restricted directory for Certbot credentials
+  ansible.builtin.file:
+    path: /etc/letsencrypt/secrets
+    state: directory
     owner: root
     group: root
-    mode: '700'
+    mode: "0700"
 
-- name: Copy certbot system services
-  ansible.builtin.copy:
-    src: files/certbot.service
-    dest: /etc/systemd/system/certbot.service
+- name: Deploy DNS API credentials securely
+  ansible.builtin.template:
+    src: credentials.ini.j2
+    dest: /etc/letsencrypt/secrets/dns-credentials.ini
     owner: root
     group: root
-    mode: '644'
+    mode: "0600"
+  no_log: true
 
-- name: Certbot timer system services
-  ansible.builtin.copy:
-    src: files/certbot.timer
-    dest: /etc/systemd/system/certbot.timer
+- name: Ensure Certbot renewal deploy-hooks directory exists
+  ansible.builtin.file:
+    path: /etc/letsencrypt/renewal-hooks/deploy
+    state: directory
     owner: root
     group: root
-    mode: '644'
+    mode: "0755"
 
-- name: Ensure certbot.timer is started and enable at boot
+- name: Install Nginx reload deploy hook for certificate renewals
+  ansible.builtin.copy:
+    src: reload-nginx.sh
+    dest: /etc/letsencrypt/renewal-hooks/deploy/reload-nginx.sh
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Obtain initial Let's Encrypt certificate via DNS-01 (runs only once)
+  ansible.builtin.command:
+    argv:
+      - certbot
+      - certonly
+      - --non-interactive
+      - --agree-tos
+      - --no-eff-email
+      - --email
+      - "{{ certbot_email }}"
+      - --dns-cloudflare
+      - --dns-cloudflare-credentials
+      - /etc/letsencrypt/secrets/dns-credentials.ini
+      - --dns-cloudflare-propagation-seconds
+      - "30"
+      - --keep-until-expiring
+      - -d
+      - "{{ drupal_domain }}"
+      - -d
+      - "www.{{ drupal_domain }}"
+  args:
+    creates: "/etc/letsencrypt/live/{{ drupal_domain }}/fullchain.pem"
+  notify: reload nginx
+
+- name: Ensure Ubuntu's built-in Certbot renewal timer is enabled and running
   ansible.builtin.systemd:
     name: certbot.timer
     state: started
-    enabled: yes
-
-- name: Copy certbot installation script
-  ansible.builtin.copy:
-    src: files/get-certs.sh
-    dest: /root/certbot/get-certs.sh
-    owner: root
-    group: root
-    mode: '700'
-
-
-- name: Run get-cert
-  command: "/root/certbot/get-certs.sh"
+    enabled: true
