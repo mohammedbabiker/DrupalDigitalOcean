@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "68decb6b1f03456a53c2a42b7d54f9a6",
+    "content-hash": "c33787c2bce70d354655a205535b3889",
     "packages": [
         {
             "name": "asm89/stack-cors",
@@ -1943,76 +1943,6 @@
             }
         },
         {
-            "name": "drupal/material_base",
-            "version": "3.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://git.drupalcode.org/project/material_base.git",
-                "reference": "3.0.0"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://ftp.drupal.org/files/projects/material_base-3.0.0.zip",
-                "reference": "3.0.0",
-                "shasum": "98cca2d480a2e39e4283461d67a4d80d31023772"
-            },
-            "require": {
-                "drupal/core": "^9 || ^10 || ^11"
-            },
-            "type": "drupal-theme",
-            "extra": {
-                "drupal": {
-                    "version": "3.0.0",
-                    "datestamp": "1714678839",
-                    "security-coverage": {
-                        "status": "covered",
-                        "message": "Covered by Drupal's security advisory policy"
-                    }
-                }
-            },
-            "notification-url": "https://packages.drupal.org/8/downloads",
-            "license": [
-                "GPL-2.0-or-later"
-            ],
-            "authors": [
-                {
-                    "name": "Andrey Yurtaev (iamdroid)",
-                    "homepage": "https://www.drupal.org/u/iamdroid",
-                    "role": "Maintainer"
-                },
-                {
-                    "name": "beloglazov91",
-                    "homepage": "https://www.drupal.org/user/3431497"
-                },
-                {
-                    "name": "branimir.juranic",
-                    "homepage": "https://www.drupal.org/user/3331091"
-                },
-                {
-                    "name": "iamdroid",
-                    "homepage": "https://www.drupal.org/user/892728"
-                },
-                {
-                    "name": "kalabro",
-                    "homepage": "https://www.drupal.org/user/1399638"
-                },
-                {
-                    "name": "pavel.bulat",
-                    "homepage": "https://www.drupal.org/user/3568596"
-                },
-                {
-                    "name": "Spleshka",
-                    "homepage": "https://www.drupal.org/user/810676"
-                }
-            ],
-            "description": "Base theme inspirited by Material Design concept.",
-            "homepage": "https://www.drupal.org/project/material_base",
-            "support": {
-                "source": "https://git.drupalcode.org/project/material_base",
-                "issues": "https://www.drupal.org/project/issues/material_base"
-            }
-        },
-        {
             "name": "drupal/paragraphs",
             "version": "1.19.0",
             "source": {
@@ -2210,75 +2140,6 @@
             "homepage": "https://www.drupal.org/project/ruhi",
             "support": {
                 "source": "https://git.drupalcode.org/project/ruhi"
-            }
-        },
-        {
-            "name": "drupal/showcase_lite",
-            "version": "1.5.0",
-            "source": {
-                "type": "git",
-                "url": "https://git.drupalcode.org/project/showcase_lite.git",
-                "reference": "8.x-1.5"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://ftp.drupal.org/files/projects/showcase_lite-8.x-1.5.zip",
-                "reference": "8.x-1.5",
-                "shasum": "c5f5e75c8c500cd7d941350e607101e0281d9954"
-            },
-            "require": {
-                "drupal/core": "^8 || ^9 || ^10"
-            },
-            "type": "drupal-theme",
-            "extra": {
-                "drupal": {
-                    "version": "8.x-1.5",
-                    "datestamp": "1706177649",
-                    "security-coverage": {
-                        "status": "covered",
-                        "message": "Covered by Drupal's security advisory policy"
-                    }
-                }
-            },
-            "notification-url": "https://packages.drupal.org/8/downloads",
-            "license": [
-                "GPL-2.0-or-later"
-            ],
-            "authors": [
-                {
-                    "name": "Stavros Kounis (skounis)",
-                    "homepage": "https://www.drupal.org/u/skounis",
-                    "role": "Maintainer"
-                },
-                {
-                    "name": "Soukri Kechagia (skechagia)",
-                    "homepage": "https://www.drupal.org/u/skech",
-                    "role": "Maintainer"
-                },
-                {
-                    "name": "Vasilis Kechagias (vkech)",
-                    "homepage": "https://www.drupal.org/u/vkech",
-                    "role": "Maintainer"
-                },
-                {
-                    "name": "Giorgos Konispoliatis (Geokon)",
-                    "homepage": "https://www.drupal.org/u/geokon",
-                    "role": "Maintainer"
-                },
-                {
-                    "name": "skounis",
-                    "homepage": "https://www.drupal.org/user/877552"
-                },
-                {
-                    "name": "vkech",
-                    "homepage": "https://www.drupal.org/user/1451830"
-                }
-            ],
-            "description": "A free version of Showcase+, our Drupal theme for creatives, trendsetters, design and development studios.",
-            "homepage": "https://www.drupal.org/project/showcase_lite",
-            "support": {
-                "source": "https://git.drupalcode.org/project/showcase_lite",
-                "issues": "https://www.drupal.org/project/issues/showcase_lite"
             }
         },
         {
