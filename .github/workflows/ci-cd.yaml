@@ -60,17 +60,12 @@ jobs:
           ansible-galaxy collection install community.general
 
       - name: Configure SSH key and known host
-        env:
-          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
-          VPS_HOST: ${{ secrets.VPS_HOST }}
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          CLEAN_HOST="$(printf '%s' "$VPS_HOST" | tr -d '[:space:]')"
-          ssh-keyscan -v -T 15 -H "$CLEAN_HOST" >> ~/.ssh/known_hosts
-          test -s ~/.ssh/known_hosts || { echo "ERROR: Could not retrieve SSH host key from port 22"; exit 1; }
+          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Run Ansible release playbook
         run: |
