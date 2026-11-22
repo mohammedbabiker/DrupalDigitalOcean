@@ -70,3 +70,14 @@
     name: certbot.timer
     state: started
     enabled: true
+
+- name: Mark certbot role as bootstrapped so future runs skip it
+  community.general.ini_file:
+    path: /etc/ansible/facts.d/bootstrap.fact
+    section: state
+    option: certbot_done
+    value: "true"
+    owner: root
+    group: root
+    mode: "0644"
+    create: true

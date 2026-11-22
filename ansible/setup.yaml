@@ -2,6 +2,17 @@
 - name: Deploy Drupal Stack on DigitalOcean
   hosts: server
   become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Ensure Ansible local facts directory exists
+      ansible.builtin.file:
+        path: /etc/ansible/facts.d
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+      tags: [always]
 
   roles:
     - role: hostname
@@ -18,6 +29,9 @@
 
     - role: database
       tags: [database, db]
+      when: >
+        not (ansible_local.bootstrap.state.database_done | default(false) | bool)
+        or (force_database | default(false) | bool)
 
     - role: php
       tags: [php]
@@ -30,6 +44,9 @@
 
     - role: certbot
       tags: [certbot, ssl]
+      when: >
+        not (ansible_local.bootstrap.state.certbot_done | default(false) | bool)
+        or (force_certbot | default(false) | bool)
 
     - role: drupal
       tags: [drupal_vhost, web]
