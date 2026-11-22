@@ -89,6 +89,15 @@
             HOME: /tmp
           register: drush_updb
           changed_when: "'No pending updates' not in drush_updb.stderr and 'No pending updates' not in drush_updb.stdout"
+        
+        - name: Rebuild cache before config import so new code/modules are discovered
+          become_user: www-data
+          ansible.builtin.command:
+            cmd: "{{ drupal_root }}/vendor/bin/drush --root={{ drupal_root }} --uri=https://{{ drupal_domain }} cache:rebuild"
+            chdir: "{{ drupal_root }}"
+          environment:
+            HOME: /tmp
+          changed_when: false
 
         - name: Import Drupal configuration from config/sync
           become_user: www-data
