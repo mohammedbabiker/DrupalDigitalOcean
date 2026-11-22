@@ -118,3 +118,4 @@ sites/simpletest
 /ansible/roles/essentials/files/br0.network
 /ansible/roles/hostname/defaults/main.yaml
 /.ddev
+db/
