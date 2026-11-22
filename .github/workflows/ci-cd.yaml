@@ -1,0 +1,77 @@
+name: Drupal CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build & Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.3 and Composer
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          tools: composer:v2
+
+      - name: Validate composer.json and composer.lock
+        run: composer validate --no-check-publish
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+  deploy:
+    name: Deploy to Production VPS
+    needs: build
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify required secrets and playbook exist
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          DRUPAL_REPO_URL: ${{ secrets.DRUPAL_REPO_URL }}
+        run: |
+          test -f ansible/release.yaml || { echo "ERROR: ansible/release.yaml not found in this repo"; exit 1; }
+          for var in VPS_HOST VPS_USER VPS_SSH_KEY DRUPAL_REPO_URL; do
+            test -n "${!var}" || { echo "ERROR: GitHub Secret $var is missing or empty"; exit 1; }
+          done
+
+      - name: Install Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible-core
+          ansible-galaxy collection install community.general
+
+      - name: Configure SSH key and known host
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Run Ansible release playbook
+        run: |
+          ansible-playbook ansible/release.yaml \
+            -i "${{ secrets.VPS_HOST }}," \
+            -u "${{ secrets.VPS_USER }}" \
+            --private-key ~/.ssh/deploy_key \
+            -e "github_repo_url=${{ secrets.DRUPAL_REPO_URL }}" \
+            -e "deploy_domain=mohammedworkspace.my.id"
